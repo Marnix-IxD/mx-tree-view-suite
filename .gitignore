@@ -24,3 +24,14 @@ mendixProject
 # Ignore all markdown files except README files
 *.md
 !README*.md
+
+# Ignore backup files
+*.backup*
+*.bak
+**/backup/
+**/backups/
+
+# Ignore refactorLater files
+*refactorLater*
+*RefactorLater*
+*REFACTOR_LATER*
