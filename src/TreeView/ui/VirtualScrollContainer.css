@@ -1,0 +1,94 @@
+/* VirtualScrollContainer.css - Styles for virtual scrolling container */
+
+/* Base virtual scroll container */
+.mx-tree__virtual-scroll-container {
+    /* Base styles handled inline for performance */
+}
+
+/* Visual indicators for height strategies (development mode) */
+.mx-tree--debug-mode .mx-tree__virtual-scroll-container::before {
+    content: attr(data-height-strategy);
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    z-index: 100;
+    pointer-events: none;
+    font-family: monospace;
+}
+
+/* Height strategy specific styles */
+.mx-tree__virtual-scroll-container--parent-constrained {
+    /* Using parent's height constraint - ideal case */
+}
+
+.mx-tree__virtual-scroll-container--viewport-calculated {
+    /* Calculated based on viewport - fallback case */
+    border: 1px solid var(--mx-tree-border-color, #e0e0e0);
+}
+
+.mx-tree__virtual-scroll-container--unconstrained {
+    /* No height constraints - will grow indefinitely */
+}
+
+/* Debug mode warning for unconstrained containers */
+.mx-tree--debug-mode .mx-tree__virtual-scroll-container--unconstrained::after {
+    content: "⚠️ No height constraint";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ff6b6b;
+    color: white;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 100;
+}
+
+/* Scrollbar styling for consistency */
+.mx-tree__virtual-scroll-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.mx-tree__virtual-scroll-container::-webkit-scrollbar-track {
+    background: var(--mx-tree-scrollbar-track, #f1f1f1);
+}
+
+.mx-tree__virtual-scroll-container::-webkit-scrollbar-thumb {
+    background: var(--mx-tree-scrollbar-thumb, #c1c1c1);
+    border-radius: 4px;
+}
+
+.mx-tree__virtual-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: var(--mx-tree-scrollbar-thumb-hover, #a8a8a8);
+}
+
+/* Virtual scroll spacer */
+.mx-tree__virtual-scroll-spacer {
+    /* Maintains scroll height for all items */
+}
+
+/* Virtual scroll item */
+.mx-tree__virtual-scroll-item {
+    /* Positioned absolutely via inline styles */
+}
+
+/* Smooth scrolling */
+.mx-tree__virtual-scroll-container--smooth {
+    scroll-behavior: smooth;
+}
+
+/* Performance optimization - disable during scroll */
+.mx-tree__virtual-scroll-container--scrolling {
+    pointer-events: none;
+}
+
+.mx-tree__virtual-scroll-container--scrolling .mx-tree__node {
+    will-change: transform;
+}

@@ -1,0 +1,288 @@
+/**
+ * Advanced Filter Builder for TreeView
+ * Based on Mendix datagrid filter patterns
+ * Provides comprehensive filtering options for different data types
+ */
+
+import { FilterCondition } from "mendix/filters";
+import {
+    and,
+    or,
+    equals,
+    notEqual,
+    greaterThan,
+    greaterThanOrEqual,
+    lessThan,
+    lessThanOrEqual,
+    contains,
+    startsWith,
+    endsWith,
+    attribute,
+    literal
+} from "mendix/filters/builders";
+import { ListAttributeValue } from "mendix";
+import { Big } from "big.js";
+
+/**
+ * Filter comparison types based on Mendix datagrid patterns
+ */
+export enum FilterComparison {
+    EQUAL = "equal",
+    NOT_EQUAL = "notEqual",
+    GREATER = "greater",
+    GREATER_OR_EQUAL = "greaterOrEqual",
+    SMALLER = "smaller",
+    SMALLER_OR_EQUAL = "smallerOrEqual",
+    BETWEEN = "between",
+    CONTAINS = "contains",
+    STARTS_WITH = "startsWith",
+    ENDS_WITH = "endsWith"
+}
+
+/**
+ * Date filter presets for common date ranges
+ */
+export enum DateFilterPreset {
+    TODAY = "today",
+    YESTERDAY = "yesterday",
+    THIS_WEEK = "thisWeek",
+    LAST_WEEK = "lastWeek",
+    THIS_MONTH = "thisMonth",
+    LAST_MONTH = "lastMonth",
+    THIS_YEAR = "thisYear",
+    LAST_YEAR = "lastYear",
+    CUSTOM = "custom"
+}
+
+/**
+ * Build a number filter with comparison options
+ */
+export function buildNumberFilter(
+    numberAttribute: ListAttributeValue<Big>,
+    comparison: FilterComparison,
+    value: number,
+    value2?: number // For BETWEEN comparison
+): FilterCondition | undefined {
+    const bigValue = new Big(value);
+
+    switch (comparison) {
+        case FilterComparison.EQUAL:
+            return equals(attribute(numberAttribute.id), literal(bigValue));
+        case FilterComparison.NOT_EQUAL:
+            return notEqual(attribute(numberAttribute.id), literal(bigValue));
+        case FilterComparison.GREATER:
+            return greaterThan(attribute(numberAttribute.id), literal(bigValue));
+        case FilterComparison.GREATER_OR_EQUAL:
+            return greaterThanOrEqual(attribute(numberAttribute.id), literal(bigValue));
+        case FilterComparison.SMALLER:
+            return lessThan(attribute(numberAttribute.id), literal(bigValue));
+        case FilterComparison.SMALLER_OR_EQUAL:
+            return lessThanOrEqual(attribute(numberAttribute.id), literal(bigValue));
+        case FilterComparison.BETWEEN:
+            if (value2 !== undefined) {
+                return and(
+                    greaterThanOrEqual(attribute(numberAttribute.id), literal(bigValue)),
+                    lessThanOrEqual(attribute(numberAttribute.id), literal(new Big(value2)))
+                );
+            }
+            return undefined;
+        default:
+            return undefined;
+    }
+}
+
+/**
+ * Build a string filter with comparison options
+ */
+export function buildStringFilter(
+    stringAttribute: ListAttributeValue<string>,
+    comparison: FilterComparison,
+    value: string
+): FilterCondition | undefined {
+    switch (comparison) {
+        case FilterComparison.EQUAL:
+            return equals(attribute(stringAttribute.id), literal(value));
+        case FilterComparison.NOT_EQUAL:
+            return notEqual(attribute(stringAttribute.id), literal(value));
+        case FilterComparison.CONTAINS:
+            return contains(attribute(stringAttribute.id), literal(value));
+        case FilterComparison.STARTS_WITH:
+            return startsWith(attribute(stringAttribute.id), literal(value));
+        case FilterComparison.ENDS_WITH:
+            return endsWith(attribute(stringAttribute.id), literal(value));
+        default:
+            return undefined;
+    }
+}
+
+/**
+ * Build a date filter with comparison options
+ */
+export function buildDateFilter(
+    dateAttribute: ListAttributeValue<Date>,
+    comparison: FilterComparison,
+    value: Date,
+    value2?: Date // For BETWEEN comparison
+): FilterCondition | undefined {
+    switch (comparison) {
+        case FilterComparison.EQUAL:
+            return equals(attribute(dateAttribute.id), literal(value));
+        case FilterComparison.NOT_EQUAL:
+            return notEqual(attribute(dateAttribute.id), literal(value));
+        case FilterComparison.GREATER:
+            return greaterThan(attribute(dateAttribute.id), literal(value));
+        case FilterComparison.GREATER_OR_EQUAL:
+            return greaterThanOrEqual(attribute(dateAttribute.id), literal(value));
+        case FilterComparison.SMALLER:
+            return lessThan(attribute(dateAttribute.id), literal(value));
+        case FilterComparison.SMALLER_OR_EQUAL:
+            return lessThanOrEqual(attribute(dateAttribute.id), literal(value));
+        case FilterComparison.BETWEEN:
+            if (value2) {
+                return and(
+                    greaterThanOrEqual(attribute(dateAttribute.id), literal(value)),
+                    lessThanOrEqual(attribute(dateAttribute.id), literal(value2))
+                );
+            }
+            return undefined;
+        default:
+            return undefined;
+    }
+}
+
+/**
+ * Build a date filter using preset ranges
+ */
+export function buildDatePresetFilter(
+    dateAttribute: ListAttributeValue<Date>,
+    preset: DateFilterPreset
+): FilterCondition | undefined {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    switch (preset) {
+        case DateFilterPreset.TODAY:
+            return and(
+                greaterThanOrEqual(attribute(dateAttribute.id), literal(today)),
+                lessThan(attribute(dateAttribute.id), literal(addDays(today, 1)))
+            );
+
+        case DateFilterPreset.YESTERDAY:
+            const yesterday = addDays(today, -1);
+            return and(
+                greaterThanOrEqual(attribute(dateAttribute.id), literal(yesterday)),
+                lessThan(attribute(dateAttribute.id), literal(today))
+            );
+
+        case DateFilterPreset.THIS_WEEK:
+            const weekStart = getWeekStart(today);
+            const weekEnd = addDays(weekStart, 7);
+            return and(
+                greaterThanOrEqual(attribute(dateAttribute.id), literal(weekStart)),
+                lessThan(attribute(dateAttribute.id), literal(weekEnd))
+            );
+
+        case DateFilterPreset.LAST_WEEK:
+            const lastWeekStart = addDays(getWeekStart(today), -7);
+            const lastWeekEnd = addDays(lastWeekStart, 7);
+            return and(
+                greaterThanOrEqual(attribute(dateAttribute.id), literal(lastWeekStart)),
+                lessThan(attribute(dateAttribute.id), literal(lastWeekEnd))
+            );
+
+        case DateFilterPreset.THIS_MONTH:
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+            return and(
+                greaterThanOrEqual(attribute(dateAttribute.id), literal(monthStart)),
+                lessThan(attribute(dateAttribute.id), literal(monthEnd))
+            );
+
+        case DateFilterPreset.LAST_MONTH:
+            const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 1);
+            return and(
+                greaterThanOrEqual(attribute(dateAttribute.id), literal(lastMonthStart)),
+                lessThan(attribute(dateAttribute.id), literal(lastMonthEnd))
+            );
+
+        case DateFilterPreset.THIS_YEAR:
+            const yearStart = new Date(today.getFullYear(), 0, 1);
+            const yearEnd = new Date(today.getFullYear() + 1, 0, 1);
+            return and(
+                greaterThanOrEqual(attribute(dateAttribute.id), literal(yearStart)),
+                lessThan(attribute(dateAttribute.id), literal(yearEnd))
+            );
+
+        case DateFilterPreset.LAST_YEAR:
+            const lastYearStart = new Date(today.getFullYear() - 1, 0, 1);
+            const lastYearEnd = new Date(today.getFullYear(), 0, 1);
+            return and(
+                greaterThanOrEqual(attribute(dateAttribute.id), literal(lastYearStart)),
+                lessThan(attribute(dateAttribute.id), literal(lastYearEnd))
+            );
+
+        default:
+            return undefined;
+    }
+}
+
+/**
+ * Build a boolean filter
+ */
+export function buildBooleanFilter(booleanAttribute: ListAttributeValue<boolean>, value: boolean): FilterCondition {
+    return equals(attribute(booleanAttribute.id), literal(value));
+}
+
+/**
+ * Build an enum/option filter
+ */
+export function buildEnumFilter(enumAttribute: ListAttributeValue<string>, value: string): FilterCondition {
+    return equals(attribute(enumAttribute.id), literal(value));
+}
+
+/**
+ * Helper function to add days to a date
+ */
+function addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}
+
+/**
+ * Helper function to get the start of the week (Monday)
+ */
+function getWeekStart(date: Date): Date {
+    const result = new Date(date);
+    const day = result.getDay();
+    const diff = result.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+    result.setDate(diff);
+    return result;
+}
+
+/**
+ * Combine multiple filters with OR logic
+ */
+export function combineFiltersOr(filters: FilterCondition[]): FilterCondition | undefined {
+    if (filters.length === 0) {
+        return undefined;
+    }
+    if (filters.length === 1) {
+        return filters[0];
+    }
+    return or(...filters);
+}
+
+/**
+ * Combine multiple filters with AND logic
+ */
+export function combineFiltersAnd(filters: FilterCondition[]): FilterCondition | undefined {
+    if (filters.length === 0) {
+        return undefined;
+    }
+    if (filters.length === 1) {
+        return filters[0];
+    }
+    return and(...filters);
+}

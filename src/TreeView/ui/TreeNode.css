@@ -1,0 +1,372 @@
+/* TreeNode.improved.css - Enhanced tree node styles for proper alignment and visualization */
+
+/* Base node container */
+.mx-tree__node {
+    display: flex;
+    align-items: stretch; /* Changed from center to stretch for proper vertical alignment */
+    position: relative;
+    min-height: var(--mx-tree-node-height);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color var(--mx-tree-transition-duration) var(--mx-tree-transition-easing);
+    /* Remove any default padding that might interfere with indentation */
+    padding: 0;
+}
+
+/* Node wrapper that contains all node elements */
+.mx-tree__node-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: var(--mx-tree-node-height);
+    position: relative;
+    /* Padding for content, not for indentation */
+    padding: 0 8px;
+}
+
+/* Indentation spacer - CRITICAL for proper alignment */
+.mx-tree__node-indent {
+    display: block;
+    flex-shrink: 0;
+    /* Width will be set inline based on level * indentSize */
+}
+
+/* Tree lines container - positioned absolutely to not affect layout */
+.mx-tree__node-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    pointer-events: none;
+    /* Width will be set inline based on level * indentSize */
+}
+
+/* Vertical lines - one for each ancestor level */
+.mx-tree__node-line-vertical {
+    position: absolute;
+    width: 1px;
+    top: 0;
+    bottom: 0;
+    background-color: var(--mx-tree-line-color, #e0e0e0);
+    /* Left position will be set inline */
+}
+
+/* Hide the last vertical line that extends below the last child */
+.mx-tree__node.mx-tree__node--last-child .mx-tree__node-line-vertical:last-child {
+    height: 50%;
+}
+
+/* Horizontal line connecting to the node */
+.mx-tree__node-line-horizontal {
+    position: absolute;
+    height: 1px;
+    top: 50%;
+    background-color: var(--mx-tree-line-color, #e0e0e0);
+    /* Left and width will be set inline */
+}
+
+/* Node controls container (expand button, selection, etc.) */
+.mx-tree__node-controls {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 4px;
+}
+
+/* Expand/collapse button */
+.mx-tree__node-expand-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--mx-tree-icon-color, #666666);
+    transition: color var(--mx-tree-transition-duration) ease;
+}
+
+.mx-tree__node-expand-button:hover:not(:disabled) {
+    color: var(--mx-tree-icon-hover-color, #333333);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+/* Expand spacer for leaf nodes */
+.mx-tree__node-expand-spacer {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* Selection controls styling */
+.mx-tree__node-selection {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Enhanced checkbox styling */
+.mx-tree__node-checkbox {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: 2px solid var(--mx-tree-border-color, #d1d5db);
+    border-radius: 3px;
+    background-color: white;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.mx-tree__node-checkbox:hover {
+    border-color: var(--mx-tree-primary-color, #3b82f6);
+}
+
+.mx-tree__node-checkbox:checked {
+    background-color: var(--mx-tree-primary-color, #3b82f6);
+    border-color: var(--mx-tree-primary-color, #3b82f6);
+}
+
+.mx-tree__node-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Enhanced radio button styling */
+.mx-tree__node-radio {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: 2px solid var(--mx-tree-border-color, #d1d5db);
+    border-radius: 50%;
+    background-color: white;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.mx-tree__node-radio:hover {
+    border-color: var(--mx-tree-primary-color, #3b82f6);
+}
+
+.mx-tree__node-radio:checked {
+    border-color: var(--mx-tree-primary-color, #3b82f6);
+}
+
+.mx-tree__node-radio:checked::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--mx-tree-primary-color, #3b82f6);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Node content area */
+.mx-tree__node-content {
+    flex: 1;
+    min-width: 0; /* Allow text truncation */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+/* Node label */
+.mx-tree__node-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.5;
+}
+
+/* Custom content containers */
+.mx-tree__node-custom-content,
+.mx-tree__node-label-widget {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* When custom content is used, allow flexible height */
+.mx-tree__node.mx-tree__node--has-custom-content {
+    min-height: var(--mx-tree-node-height);
+    height: auto;
+}
+
+.mx-tree__node.mx-tree__node--has-custom-content .mx-tree__node-wrapper {
+    min-height: var(--mx-tree-node-height);
+    height: auto;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+/* Visibility toggle button */
+.mx-tree__node-visibility-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--mx-tree-visibility-toggle-size, 20px);
+    height: var(--mx-tree-visibility-toggle-size, 20px);
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--mx-tree-icon-color, #666666);
+    transition: all var(--mx-tree-transition-duration) ease;
+}
+
+.mx-tree__node-visibility-button:hover {
+    color: var(--mx-tree-icon-hover-color, #333333);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+/* Icon sizing */
+.mx-tree__node-expand-icon-svg,
+.mx-tree__node-visibility-icon-svg {
+    width: var(--mx-tree-icon-size, 16px);
+    height: var(--mx-tree-icon-size, 16px);
+}
+
+/* Node states - Combined with base class for proper specificity */
+.mx-tree__node:hover:not(.mx-tree__node--dragging) {
+    background-color: var(--mx-tree-hover-background, rgba(0, 0, 0, 0.04));
+}
+
+/* Selected state overrides base and hover */
+.mx-tree__node.mx-tree__node--selected {
+    background-color: var(--mx-tree-selected-background, rgba(0, 102, 204, 0.1));
+}
+
+.mx-tree__node.mx-tree__node--selected::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: var(--mx-tree-primary-color, #3b82f6);
+}
+
+/* Selected hover state */
+.mx-tree__node.mx-tree__node--selected:hover:not(.mx-tree__node--dragging) {
+    background-color: var(--mx-tree-selected-hover-background, rgba(0, 102, 204, 0.15));
+}
+
+/* Highlighted state overrides base */
+.mx-tree__node.mx-tree__node--highlighted {
+    background-color: var(--mx-tree-highlight-color, rgba(255, 235, 59, 0.3));
+    animation: mx-tree-highlight-fade 2s ease-out;
+}
+
+/* Focused state */
+.mx-tree__node.mx-tree__node--focused {
+    outline: 2px solid var(--mx-tree-primary-color, #3b82f6);
+    outline-offset: -2px;
+}
+
+/* Hidden/disabled state */
+.mx-tree__node.mx-tree__node--hidden {
+    opacity: 0.4;
+}
+
+/* Sticky state */
+.mx-tree__node.mx-tree__node--sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--mx-tree-sticky-background, #ffffff);
+    border-bottom: 1px solid var(--mx-tree-border-color, #e0e0e0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Drag and drop states */
+.mx-tree__node.mx-tree__node--dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.mx-tree__node.mx-tree__node--drag-over {
+    background-color: var(--mx-tree-drag-over-background, rgba(59, 130, 246, 0.1));
+}
+
+/* Drop position indicators */
+.mx-tree__node.mx-tree__node--drop-before::before,
+.mx-tree__node.mx-tree__node--drop-after::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--mx-tree-primary-color, #3b82f6);
+    z-index: 1;
+}
+
+.mx-tree__node.mx-tree__node--drop-before::before {
+    top: -1px;
+}
+
+.mx-tree__node.mx-tree__node--drop-after::after {
+    bottom: -1px;
+}
+
+/* Drop inside indicator */
+.mx-tree__node.mx-tree__node--drop-inside {
+    outline: 2px dashed var(--mx-tree-primary-color, #3b82f6);
+    outline-offset: -2px;
+}
+
+/* Animations */
+@keyframes mx-tree-highlight-fade {
+    from {
+        background-color: var(--mx-tree-highlight-color, rgba(255, 235, 59, 0.5));
+    }
+    to {
+        background-color: transparent;
+    }
+}
+
+/* Responsive adjustments for touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .mx-tree__node {
+        min-height: calc(var(--mx-tree-node-height) * 1.25);
+    }
+    
+    .mx-tree__node-expand-button,
+    .mx-tree__node-visibility-button {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .mx-tree__node-checkbox,
+    .mx-tree__node-radio {
+        width: 20px;
+        height: 20px;
+    }
+}

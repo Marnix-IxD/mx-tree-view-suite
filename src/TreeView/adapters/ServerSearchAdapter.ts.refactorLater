@@ -1,0 +1,335 @@
+import { BaseSearchAdapter } from "./BaseSearchAdapter";
+import {
+    SearchMode,
+    SearchFeature,
+    ISearchOptions,
+    ISearchResponse,
+    IUnifiedSearchResult,
+    IPerformanceEstimate,
+    ISearchContext,
+    ISearchFilter
+} from "../types/UnifiedSearchTypes";
+import { SearchRequestManager } from "../utils/searchRequestManager";
+import { ListAttributeValue } from "mendix";
+import { Big } from "big.js";
+
+/**
+ * Server search request format
+ */
+interface IServerSearchRequest {
+    entity: string;
+    filters: ISearchFilter[];
+    logic: "AND" | "OR";
+    includeAncestors: boolean;
+    expandResults: boolean;
+    limit: number;
+    offset: number;
+}
+
+/**
+ * Server search response format
+ */
+interface IServerSearchResponse {
+    results: Array<{
+        nodeId: string;
+        structureId?: string;
+        matches: Array<{
+            attribute: string;
+            matchedValue: string;
+            highlights: Array<{ start: number; end: number }>;
+        }>;
+    }>;
+    ancestors?: Array<{
+        nodeId: string;
+        structureId: string;
+        level: number;
+    }>;
+    total: number;
+    executionTime: number;
+    cached: boolean;
+    hasMore: boolean;
+    nextOffset?: number;
+}
+
+/**
+ * Search adapter for REST API server-side search
+ * Best for large datasets and advanced filtering
+ */
+export class ServerSearchAdapter extends BaseSearchAdapter {
+    readonly mode: SearchMode = "server";
+    readonly name = "Server Search";
+    readonly priority = 50; // Lower priority - use as fallback
+
+    private context: ISearchContext;
+    private endpoint: string;
+    private timeout: number;
+    private requestManager: SearchRequestManager;
+    private searchAttributes: Array<ListAttributeValue<string | Big | boolean | Date>>;
+
+    constructor(
+        context: ISearchContext,
+        endpoint: string,
+        searchAttributes: Array<ListAttributeValue<string | Big | boolean | Date>>,
+        timeout = 5000
+    ) {
+        super();
+        this.context = context;
+        this.endpoint = endpoint;
+        this.timeout = timeout;
+        this.searchAttributes = searchAttributes;
+        this.requestManager = new SearchRequestManager();
+
+        // Server search supports all features
+        this.features = new Set([
+            SearchFeature.TypeAwareFiltering,
+            SearchFeature.Highlighting,
+            SearchFeature.AncestorExpansion,
+            SearchFeature.Pagination,
+            SearchFeature.Cancellation,
+            SearchFeature.FuzzySearch,
+            SearchFeature.PartialMatching
+        ]);
+    }
+
+    /**
+     * Check if server search is available
+     */
+    isAvailable(): boolean {
+        // Check if endpoint is configured and we're online
+        return !!this.endpoint && !!this.context.entityType && !this.context.isOffline;
+    }
+
+    /**
+     * Estimate performance based on network and dataset
+     */
+    estimatePerformance(options: ISearchOptions): IPerformanceEstimate {
+        const factors: string[] = [];
+        let estimatedTime = 200; // Base network latency
+
+        // Server search is good for large datasets
+        factors.push("Server-side processing");
+
+        if (options.includeAncestors) {
+            estimatedTime += 100;
+            factors.push("Ancestor expansion requested");
+        }
+
+        if (options.filters && options.filters.length > 1) {
+            estimatedTime += 50;
+            factors.push(`${options.filters.length} filters applied`);
+        }
+
+        if (this.context.isOffline) {
+            return {
+                estimatedTime: Infinity,
+                confidence: 1.0,
+                factors: ["Offline - server search unavailable"]
+            };
+        }
+
+        return {
+            estimatedTime,
+            confidence: 0.6, // Medium confidence due to network variability
+            factors
+        };
+    }
+
+    /**
+     * Perform server search
+     */
+    protected async performSearch(options: ISearchOptions): Promise<ISearchResponse> {
+        const startTime = Date.now();
+
+        if (!this.context.entityType) {
+            throw new Error("Entity type not available for server search");
+        }
+
+        // Build request
+        const request: IServerSearchRequest = {
+            entity: this.context.entityType,
+            filters: this.buildFilters(options),
+            logic: options.logic || "OR",
+            includeAncestors: options.includeAncestors ?? true,
+            expandResults: options.expandResults ?? true,
+            limit: options.pageSize || 100,
+            offset: (options.page || 0) * (options.pageSize || 100)
+        };
+
+        try {
+            // Perform search with cancellation support
+            // Entity type is guaranteed to exist by isAvailable() check
+            if (!this.context.entityType) {
+                throw new Error("Entity type is required for server search");
+            }
+
+            const entityType = this.context.entityType;
+
+            const response = await this.requestManager.performSearch(
+                options.query,
+                async signal => {
+                    const fetchResponse = await fetch(
+                        `${this.endpoint}/${encodeURIComponent(entityType)}`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Accept: "application/json"
+                            },
+                            body: JSON.stringify(request),
+                            signal
+                        }
+                    );
+
+                    if (!fetchResponse.ok) {
+                        throw new Error(`Server search failed: ${fetchResponse.statusText}`);
+                    }
+
+                    return fetchResponse.json();
+                },
+                {
+                    timeout: this.timeout,
+                    onTimeout: () => {
+                        console.warn("Server search timeout for query:", options.query);
+                    }
+                }
+            );
+
+            // Convert to unified format
+            return this.convertServerResponse(response as IServerSearchResponse, startTime);
+        } catch (error: any) {
+            if (error.message === "Search cancelled") {
+                throw error;
+            }
+
+            // Network errors might indicate offline state
+            if (error.name === "NetworkError" || error.code === "ECONNREFUSED") {
+                this.context.isOffline = true;
+            }
+
+            throw error;
+        }
+    }
+
+    /**
+     * Build filters for server request
+     */
+    private buildFilters(options: ISearchOptions): ISearchFilter[] {
+        const filters: ISearchFilter[] = [];
+
+        // If specific filters provided, use them
+        if (options.filters && options.filters.length > 0) {
+            return options.filters;
+        }
+
+        // Otherwise, build filters from search attributes
+        const searchAttributes = options.searchAttributes || this.searchAttributes.map(attr => attr.id);
+
+        for (const attr of this.searchAttributes) {
+            if (!searchAttributes.includes(attr.id)) {
+                continue;
+            }
+
+            // Determine attribute type
+            // This is a simplified version - in production you'd have better type detection
+            const attributeType = this.detectAttributeType(attr);
+
+            filters.push({
+                attributeName: attr.id,
+                attributeType,
+                operator: attributeType === "String" ? "contains" : "equals",
+                value: options.query,
+                caseSensitive: options.caseSensitive ?? false
+            });
+        }
+
+        return filters;
+    }
+
+    /**
+     * Detect attribute type from ListAttributeValue
+     */
+    private detectAttributeType(attr: ListAttributeValue<any>): ISearchFilter["attributeType"] {
+        // This is a simplified detection - in production you'd use Mendix metadata
+        const attrId = attr.id.toLowerCase();
+
+        if (attrId.includes("date") || attrId.includes("time")) {
+            return "DateTime";
+        }
+        if (attrId.includes("bool") || attrId.includes("flag")) {
+            return "Boolean";
+        }
+        if (attrId.includes("amount") || attrId.includes("price") || attrId.includes("decimal")) {
+            return "Decimal";
+        }
+        if (attrId.includes("count") || attrId.includes("number") || attrId.includes("int")) {
+            return "Integer";
+        }
+
+        // Default to string
+        return "String";
+    }
+
+    /**
+     * Convert server response to unified format
+     */
+    private convertServerResponse(response: IServerSearchResponse, startTime: number): ISearchResponse {
+        const results: IUnifiedSearchResult[] = [];
+
+        // Process search results
+        for (const result of response.results) {
+            const node = this.context.nodes.get(result.nodeId);
+            const objectItem = this.context.objectItems.get(result.nodeId);
+
+            results.push({
+                nodeId: result.nodeId,
+                node,
+                objectItem,
+                matches: result.matches.map(match => ({
+                    attribute: match.attribute,
+                    value: match.matchedValue,
+                    matchedText: match.matchedValue,
+                    highlights: match.highlights
+                })),
+                ancestors: response.ancestors?.filter(a => a.nodeId !== result.nodeId).map(a => a.nodeId) || [],
+                score: 100, // Server doesn't provide scores, so use default
+                source: "server",
+                structureId: result.structureId || node?.structureId,
+                level: node?.level
+            });
+        }
+
+        return {
+            results,
+            total: response.total,
+            hasMore: response.hasMore,
+            executionTime: response.executionTime || Date.now() - startTime,
+            cached: response.cached,
+            nextOffset: response.nextOffset
+        };
+    }
+
+    /**
+     * Cancel ongoing search
+     */
+    cancel(): void {
+        super.cancel();
+        this.requestManager.cancelAll();
+    }
+
+    /**
+     * Get server endpoint info
+     */
+    getEndpointInfo(): {
+        endpoint: string;
+        entityType: string | undefined;
+        timeout: number;
+        isOnline: boolean;
+    } {
+        return {
+            endpoint: this.endpoint,
+            entityType: this.context.entityType,
+            timeout: this.timeout,
+            isOnline: !this.context.isOffline
+        };
+    }
+}

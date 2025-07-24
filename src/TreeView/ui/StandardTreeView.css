@@ -1,0 +1,80 @@
+/* StandardTreeView.css - Styles specific to standard tree view mode */
+
+.mx-tree__standard {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Content area */
+.mx-tree__content {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+/* Scroll container */
+.mx-tree__scroll-container,
+.mx-tree__virtual-scroll {
+    height: 100%;
+    overflow: auto;
+}
+
+/* Search container */
+.mx-tree__search-container {
+    position: relative;
+    padding: 8px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--mx-tree-border-color);
+}
+
+/* Category headers */
+.mx-tree__category-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--mx-tree-background, #ffffff);
+    border-bottom: 1px solid var(--mx-tree-border-color);
+}
+
+/* Category dividers (inline headers between nodes) */
+.mx-tree__category-divider {
+    padding: 8px 16px;
+    margin: 4px 0;
+    background-color: var(--mx-tree-category-bg, rgba(0, 0, 0, 0.05));
+    border-top: 1px solid var(--mx-tree-border-color);
+    border-bottom: 1px solid var(--mx-tree-border-color);
+    font-weight: 600;
+    font-size: 0.875em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mx-tree-category-text, rgba(0, 0, 0, 0.6));
+}
+
+/* Override TreeNodeHeader styles when used as category divider */
+.mx-tree__category-divider.mx-tree__node-header {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.mx-tree__category-divider .mx-tree__node-header-text {
+    display: block;
+}
+
+/* Loading state */
+.mx-tree__standard--loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Virtual scrolling */
+.mx-tree__standard--virtual .mx-tree__content {
+    overflow: hidden;
+}
+
+/* Sticky headers mode */
+.mx-tree__standard--sticky-headers .mx-tree__node--sticky {
+    position: sticky;
+    background-color: var(--mx-tree-sticky-background, #ffffff);
+}

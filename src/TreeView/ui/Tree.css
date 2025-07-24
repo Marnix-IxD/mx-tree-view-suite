@@ -1,0 +1,66 @@
+/* Import component styles */
+@import "./TreeLoading.css";
+
+/* Tree.css - Tree container and scrolling styles */
+.tree-view-container {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    /* Enable momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scrolling behavior */
+    scroll-behavior: smooth;
+}
+
+.tree-view-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.tree-view-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.tree-view-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.tree-view-container::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+.tree-view-content {
+    position: relative;
+    min-height: 100%;
+}
+
+/* Virtual scrolling styles */
+.tree-view-virtual-container {
+    position: relative;
+    width: 100%;
+}
+
+.tree-view-virtual-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+/* Reduced motion support for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .tree-view-container {
+        scroll-behavior: auto;
+    }
+    
+    /* Disable all animations and transitions */
+    .tree-view-container *,
+    .tree-view-container *::before,
+    .tree-view-container *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

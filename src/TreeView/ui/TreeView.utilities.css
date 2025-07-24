@@ -1,0 +1,119 @@
+/* TreeView Utility Classes */
+
+/* Responsive Breakpoint Classes */
+/* Based on the same breakpoints as CSSGrid widget for consistency */
+
+/* Extra Small (xs): 0-639px */
+@media (max-width: 639px) {
+    .mx-tree.mx-tree-xs-hide { display: none !important; }
+    .mx-tree.mx-tree-xs-show { display: block !important; }
+}
+
+/* Small (sm): 640-767px */
+@media (min-width: 640px) and (max-width: 767px) {
+    .mx-tree.mx-tree-sm-hide { display: none !important; }
+    .mx-tree.mx-tree-sm-show { display: block !important; }
+}
+
+/* Medium (md): 768-1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .mx-tree.mx-tree-md-hide { display: none !important; }
+    .mx-tree.mx-tree-md-show { display: block !important; }
+}
+
+/* Large (lg): 1024-1439px */
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .mx-tree.mx-tree-lg-hide { display: none !important; }
+    .mx-tree.mx-tree-lg-show { display: block !important; }
+}
+
+/* Extra Large (xl): 1440-1919px */
+@media (min-width: 1440px) and (max-width: 1919px) {
+    .mx-tree.mx-tree-xl-hide { display: none !important; }
+    .mx-tree.mx-tree-xl-show { display: block !important; }
+}
+
+/* 2X Large (xxl): 1920-2559px */
+@media (min-width: 1920px) and (max-width: 2559px) {
+    .mx-tree.mx-tree-xxl-hide { display: none !important; }
+    .mx-tree.mx-tree-xxl-show { display: block !important; }
+}
+
+/* 2K (xxxl): 2560-3839px */
+@media (min-width: 2560px) and (max-width: 3839px) {
+    .mx-tree.mx-tree-xxxl-hide { display: none !important; }
+    .mx-tree.mx-tree-xxxl-show { display: block !important; }
+}
+
+/* 4K (xxxxl): 3840px+ */
+@media (min-width: 3840px) {
+    .mx-tree.mx-tree-xxxxl-hide { display: none !important; }
+    .mx-tree.mx-tree-xxxxl-show { display: block !important; }
+}
+
+/* Theme Variables */
+.mx-tree {
+    /* Colors */
+    --mx-tree-text-color: inherit;
+    --mx-tree-background: transparent;
+    --mx-tree-border-color: rgba(0, 0, 0, 0.1);
+    
+    /* Hover/Focus States */
+    --mx-tree-hover-background: rgba(0, 0, 0, 0.04);
+    --mx-tree-focus-outline: 2px solid #0066cc;
+    --mx-tree-selected-background: rgba(0, 102, 204, 0.1);
+    
+    /* Spacing */
+    --mx-tree-node-padding: 4px 8px;
+    --mx-tree-node-height: 32px;
+    --mx-tree-indent-size: 20px;
+    
+    /* Typography */
+    --mx-tree-font-size: inherit;
+    --mx-tree-line-height: 1.5;
+    
+    /* Animation */
+    --mx-tree-transition-duration: 200ms;
+    --mx-tree-transition-easing: ease-in-out;
+}
+
+/* Utility Classes for Common Modifications */
+.mx-tree-compact {
+    --mx-tree-node-height: 24px;
+    --mx-tree-node-padding: 2px 6px;
+    --mx-tree-font-size: 0.875em;
+}
+
+.mx-tree-spacious {
+    --mx-tree-node-height: 40px;
+    --mx-tree-node-padding: 8px 12px;
+    --mx-tree-font-size: 1.1em;
+}
+
+.mx-tree-no-animation {
+    --mx-tree-transition-duration: 0ms;
+}
+
+.mx-tree-dark {
+    --mx-tree-text-color: #ffffff;
+    --mx-tree-background: #1a1a1a;
+    --mx-tree-border-color: rgba(255, 255, 255, 0.1);
+    --mx-tree-hover-background: rgba(255, 255, 255, 0.08);
+    --mx-tree-selected-background: rgba(0, 102, 204, 0.3);
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .mx-tree {
+        --mx-tree-transition-duration: 0ms;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .mx-tree-no-print { display: none !important; }
+    .mx-tree { 
+        --mx-tree-hover-background: transparent;
+        --mx-tree-focus-outline: none;
+    }
+}

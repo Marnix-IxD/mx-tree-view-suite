@@ -1,0 +1,243 @@
+/* TreeNodeTransition.css - Smooth transitions between skeleton and loaded states */
+
+/* Base transition container */
+.mx-tree__node-transition {
+    position: relative;
+    will-change: opacity, transform;
+}
+
+/* Active transition state */
+.mx-tree__node-transition--active {
+    z-index: 5; /* Elevate during transition */
+}
+
+/* Fade-in effect for loaded nodes */
+.mx-tree__node-transition--fade-in {
+    animation: mx-tree-node-fade-in 0.4s ease-out forwards;
+}
+
+@keyframes mx-tree-node-fade-in {
+    0% {
+        opacity: 0;
+        transform: translateY(4px) scale(0.98);
+    }
+    50% {
+        opacity: 0.5;
+        transform: translateY(2px) scale(0.99);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Fade-out effect for nodes becoming skeletons */
+.mx-tree__node-transition--fade-out {
+    animation: mx-tree-node-fade-out 0.3s ease-in forwards;
+}
+
+@keyframes mx-tree-node-fade-out {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0.3;
+        transform: translateY(-2px) scale(0.98);
+    }
+}
+
+/* Smooth morph transition */
+.mx-tree__node-transition--morph {
+    animation: mx-tree-node-morph 0.5s ease-in-out forwards;
+}
+
+@keyframes mx-tree-node-morph {
+    0% {
+        filter: blur(0);
+        opacity: 1;
+    }
+    50% {
+        filter: blur(1px);
+        opacity: 0.7;
+        transform: scale(1.02);
+    }
+    100% {
+        filter: blur(0);
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Loading shimmer overlay during transition */
+.mx-tree__node-transition--loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.6) 50%,
+        transparent 100%
+    );
+    animation: mx-tree-transition-shimmer 1.2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes mx-tree-transition-shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Staggered transitions for multiple nodes */
+.mx-tree__node-transition:nth-child(1) {
+    animation-delay: 0ms;
+}
+
+.mx-tree__node-transition:nth-child(2) {
+    animation-delay: 50ms;
+}
+
+.mx-tree__node-transition:nth-child(3) {
+    animation-delay: 100ms;
+}
+
+.mx-tree__node-transition:nth-child(4) {
+    animation-delay: 150ms;
+}
+
+.mx-tree__node-transition:nth-child(5) {
+    animation-delay: 200ms;
+}
+
+.mx-tree__node-transition:nth-child(n+6) {
+    animation-delay: 250ms;
+}
+
+/* Success pulse when node loads successfully */
+.mx-tree__node-transition--success {
+    animation: mx-tree-node-success-pulse 0.6s ease-out forwards;
+}
+
+@keyframes mx-tree-node-success-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+        background-color: transparent;
+    }
+    30% {
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+        background-color: rgba(34, 197, 94, 0.05);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        background-color: transparent;
+    }
+}
+
+/* Error pulse when node fails to load */
+.mx-tree__node-transition--error {
+    animation: mx-tree-node-error-pulse 0.8s ease-out forwards;
+}
+
+@keyframes mx-tree-node-error-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+        background-color: transparent;
+    }
+    30% {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+        background-color: rgba(239, 68, 68, 0.05);
+        transform: scale(1.01);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        background-color: transparent;
+        transform: scale(1);
+    }
+}
+
+/* Micro-interaction: highlight on successful load */
+.mx-tree__node-transition--highlight {
+    position: relative;
+    overflow: hidden;
+}
+
+.mx-tree__node-transition--highlight::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(59, 130, 246, 0.3) 50%,
+        transparent 100%
+    );
+    animation: mx-tree-highlight-sweep 0.8s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes mx-tree-highlight-sweep {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Performance optimizations */
+.mx-tree__node-transition {
+    transform: translateZ(0); /* Force hardware acceleration */
+    backface-visibility: hidden;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .mx-tree__node-transition,
+    .mx-tree__node-transition--active,
+    .mx-tree__node-transition--fade-in,
+    .mx-tree__node-transition--fade-out,
+    .mx-tree__node-transition--morph,
+    .mx-tree__node-transition--success,
+    .mx-tree__node-transition--error {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    .mx-tree__node-transition--loading::before,
+    .mx-tree__node-transition--highlight::after {
+        display: none;
+    }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .mx-tree__node-transition--loading::before {
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            transparent 100%
+        );
+    }
+    
+    .mx-tree__node-transition--highlight::after {
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(147, 197, 253, 0.2) 50%,
+            transparent 100%
+        );
+    }
+}

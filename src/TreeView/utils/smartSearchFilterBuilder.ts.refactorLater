@@ -1,0 +1,244 @@
+// smartSearchFilterBuilder.ts - Builds smart search filters based on input and attribute types
+
+import { ISearchFilter, ISearchRequest, SearchAttributeType } from "../types/SearchTypes";
+import {
+    detectSearchValueTypes,
+    getBestOperator,
+    convertValueForAttribute,
+    isCompatibleType
+} from "./searchValueDetector";
+
+/**
+ * Build search filters for mixed attribute types with intelligent type detection
+ */
+export function buildSmartSearchFilters(
+    searchValue: string,
+    searchFilters: ISearchFilter[],
+    entityName: string
+): ISearchRequest | null {
+    if (!searchValue || !searchFilters || searchFilters.length === 0) {
+        return null;
+    }
+
+    // Detect possible types for the search value
+    const detectedTypes = detectSearchValueTypes(searchValue);
+
+    if (detectedTypes.length === 0) {
+        return null;
+    }
+
+    // Build filters for each attribute based on detected types
+    const filters: ISearchRequest["filters"] = [];
+
+    searchFilters.forEach(searchFilter => {
+        // Find the best matching detected type for this attribute
+        const compatibleTypes = detectedTypes
+            .filter(detected => isCompatibleType(detected.type, searchFilter.attributeType))
+            .sort((a, b) => b.confidence - a.confidence);
+
+        if (compatibleTypes.length === 0) {
+            // No compatible type found, skip this attribute
+            return;
+        }
+
+        const bestMatch = compatibleTypes[0];
+        const operator = getBestOperator(searchFilter.attributeType, bestMatch.type);
+        const convertedValue = convertValueForAttribute(bestMatch, searchFilter.attributeType);
+
+        if (convertedValue !== null && convertedValue !== undefined) {
+            filters.push({
+                attributeName: searchFilter.attributeName,
+                attributeType: searchFilter.attributeType,
+                operator: operator as any,
+                value: convertedValue,
+                caseSensitive: searchFilter.caseSensitive ?? false
+            });
+        }
+    });
+
+    if (filters.length === 0) {
+        return null;
+    }
+
+    return {
+        entity: entityName,
+        filters,
+        logic: "OR", // Always OR for multi-attribute search
+        includeAncestors: true,
+        expandResults: true,
+        limit: 100,
+        offset: 0
+    };
+}
+
+/**
+ * Build filters for single-type search mode (when user selects specific type)
+ */
+export function buildTypedSearchFilters(
+    searchValue: any,
+    searchFilter: ISearchFilter,
+    operator: string,
+    entityName: string,
+    secondValue?: any // For "between" operator
+): ISearchRequest | null {
+    if (!searchFilter) {
+        return null;
+    }
+
+    const filters: ISearchRequest["filters"] = [
+        {
+            attributeName: searchFilter.attributeName,
+            attributeType: searchFilter.attributeType,
+            operator: operator as any,
+            value: searchValue,
+            value2: secondValue,
+            caseSensitive: searchFilter.caseSensitive ?? false
+        }
+    ];
+
+    return {
+        entity: entityName,
+        filters,
+        logic: "OR", // Single filter, so logic doesn't matter
+        includeAncestors: true,
+        expandResults: true,
+        limit: 100,
+        offset: 0
+    };
+}
+
+/**
+ * Build filters for multi-select mode (e.g., enums, booleans)
+ */
+export function buildMultiSelectFilters(
+    selectedValues: any[],
+    searchFilters: ISearchFilter[],
+    entityName: string
+): ISearchRequest | null {
+    if (!selectedValues || selectedValues.length === 0 || !searchFilters || searchFilters.length === 0) {
+        return null;
+    }
+
+    const filters: ISearchRequest["filters"] = [];
+
+    searchFilters.forEach(searchFilter => {
+        if (searchFilter.attributeType === "Enum") {
+            // For enum, use "in" operator with array of values
+            filters.push({
+                attributeName: searchFilter.attributeName,
+                attributeType: searchFilter.attributeType,
+                operator: "in",
+                value: selectedValues
+            });
+        } else if (searchFilter.attributeType === "Boolean") {
+            // For boolean, create separate equals filters
+            selectedValues.forEach(value => {
+                filters.push({
+                    attributeName: searchFilter.attributeName,
+                    attributeType: searchFilter.attributeType,
+                    operator: "equals",
+                    value
+                });
+            });
+        }
+    });
+
+    return {
+        entity: entityName,
+        filters,
+        logic: "OR",
+        includeAncestors: true,
+        expandResults: true,
+        limit: 100,
+        offset: 0
+    };
+}
+
+/**
+ * Generates a user-friendly description of the search being performed
+ */
+export function getSearchDescription(request: ISearchRequest): string {
+    if (!request || request.filters.length === 0) {
+        return "";
+    }
+
+    const descriptions = request.filters.map(filter => {
+        let desc = filter.attributeName;
+
+        switch (filter.operator) {
+            case "contains":
+                desc += ` contains "${filter.value}"`;
+                break;
+            case "startsWith":
+                desc += ` starts with "${filter.value}"`;
+                break;
+            case "endsWith":
+                desc += ` ends with "${filter.value}"`;
+                break;
+            case "equals":
+                desc += ` = ${filter.value}`;
+                break;
+            case "notEquals":
+                desc += ` ≠ ${filter.value}`;
+                break;
+            case "greaterThan":
+                desc += ` > ${filter.value}`;
+                break;
+            case "lessThan":
+                desc += ` < ${filter.value}`;
+                break;
+            case "between":
+                desc += ` between ${filter.value} and ${filter.value2}`;
+                break;
+            case "in":
+                desc += ` in (${filter.value.join(", ")})`;
+                break;
+            default:
+                desc += ` ${filter.operator} ${filter.value}`;
+        }
+
+        return desc;
+    });
+
+    return descriptions.join(request.logic === "AND" ? " AND " : " OR ");
+}
+
+/**
+ * Validates if a search request is valid
+ */
+export function validateSearchRequest(request: ISearchRequest): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!request.entity) {
+        errors.push("Entity name is required");
+    }
+
+    if (!request.filters || request.filters.length === 0) {
+        errors.push("At least one filter is required");
+    }
+
+    request.filters?.forEach((filter, index) => {
+        if (!filter.attributeName) {
+            errors.push(`Filter ${index + 1}: Attribute name is required`);
+        }
+
+        if (!filter.attributeType) {
+            errors.push(`Filter ${index + 1}: Attribute type is required`);
+        }
+
+        if (!filter.operator) {
+            errors.push(`Filter ${index + 1}: Operator is required`);
+        }
+
+        if (filter.operator === "between" && (!filter.value || !filter.value2)) {
+            errors.push(`Filter ${index + 1}: Between operator requires two values`);
+        } else if (filter.operator !== "between" && !filter.value && filter.value !== false && filter.value !== 0) {
+            errors.push(`Filter ${index + 1}: Value is required`);
+        }
+    });
+
+    return {
+        valid: errors.length === 0,
+        errors
+    };
+}

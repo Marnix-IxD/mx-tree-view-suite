@@ -1,0 +1,387 @@
+/* Tree View Context Manager Styles */
+
+.tree-view-context-manager {
+    position: relative;
+    min-height: 200px;
+}
+
+/* Debug Overlay */
+.context-manager-debug-overlay {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    max-width: 300px;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.context-manager-debug-overlay h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: #4CAF50;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 8px;
+}
+
+.context-manager-debug-overlay h5 {
+    margin: 16px 0 8px 0;
+    font-size: 12px;
+    color: #2196F3;
+}
+
+.debug-metrics {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.debug-metrics .metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.debug-metrics .label {
+    color: #aaa;
+}
+
+.debug-metrics .value {
+    color: #fff;
+    font-weight: bold;
+}
+
+.debug-trees {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 12px;
+}
+
+.debug-tree {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+    margin: 4px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.debug-tree.active {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: #4CAF50;
+}
+
+.debug-tree .tree-name {
+    color: #fff;
+    font-weight: 500;
+}
+
+.debug-tree .tree-selections {
+    color: #aaa;
+    font-size: 11px;
+}
+
+/* Drag Preview */
+.drag-preview {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s ease-out;
+}
+
+.drag-preview-content {
+    background: white;
+    border: 2px solid #2196F3;
+    border-radius: 6px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drag-preview-count {
+    background: #2196F3;
+    color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Drag Physics Styles */
+.tree-view-context-manager.dragging {
+    user-select: none;
+}
+
+.tree-view-context-manager.dragging .tree-drop-zone {
+    position: relative;
+}
+
+.tree-view-context-manager.dragging .tree-drop-zone::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 2px dashed transparent;
+    border-radius: 8px;
+    transition: all 0.2s;
+    pointer-events: none;
+}
+
+.tree-view-context-manager.dragging .tree-drop-zone.drop-target::before {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.05);
+}
+
+.tree-view-context-manager.dragging .tree-drop-zone.drop-restricted::before {
+    border-color: #f44336;
+    background: rgba(244, 67, 54, 0.05);
+}
+
+/* Magnetic Drop Zone Effects */
+.tree-drop-zone.magnetic-active {
+    animation: magnetic-pulse 1s ease-in-out infinite;
+}
+
+@keyframes magnetic-pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+/* Bias Resistance Visual Feedback */
+.drag-preview.resistance-active {
+    filter: brightness(0.8);
+}
+
+.drag-preview.elastic-snapback {
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Batch Operation Progress */
+.batch-operation-progress {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    min-width: 300px;
+    z-index: 1000;
+}
+
+.batch-operation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.batch-operation-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.batch-operation-status {
+    font-size: 12px;
+    color: #666;
+}
+
+.batch-progress-bar {
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.batch-progress-fill {
+    height: 100%;
+    background: #2196F3;
+    transition: width 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.batch-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: progress-shimmer 1.5s linear infinite;
+}
+
+@keyframes progress-shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.batch-operation-details {
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Tree Manager Layout */
+.tree-manager-layout {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    min-height: 400px;
+}
+
+.tree-manager-layout.vertical {
+    flex-direction: column;
+}
+
+.managed-tree-container {
+    flex: 1;
+    position: relative;
+    min-width: 200px;
+}
+
+/* Action Buttons Between Trees */
+.tree-action-buttons {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px;
+}
+
+.tree-action-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #e0e0e0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #666;
+}
+
+.tree-action-button:hover {
+    background: #f5f5f5;
+    border-color: #bbb;
+    transform: scale(1.1);
+    color: #333;
+}
+
+.tree-action-button:active {
+    transform: scale(0.95);
+}
+
+.tree-action-button.transfer-right {
+    color: #4CAF50;
+}
+
+.tree-action-button.transfer-left {
+    color: #2196F3;
+}
+
+.tree-action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Selection Synchronization Animation */
+.selection-sync-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4CAF50;
+    opacity: 0;
+    animation: sync-pulse 2s ease-in-out;
+}
+
+@keyframes sync-pulse {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    20% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1);
+    }
+}
+
+/* Loading States */
+.tree-view-context-manager.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.tree-view-context-manager.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #2196F3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error States */
+.context-manager-error {
+    background: #ffebee;
+    border: 1px solid #ffcdd2;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 8px 0;
+    color: #c62828;
+    font-size: 14px;
+}
+
+.context-manager-error-icon {
+    display: inline-block;
+    margin-right: 8px;
+    color: #d32f2f;
+}

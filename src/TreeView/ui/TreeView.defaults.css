@@ -1,0 +1,422 @@
+/* TreeView Default Styles - Provides nice defaults based on editor preview */
+
+/* Default CSS variables with actual values */
+.mx-tree {
+    /* Base colors from preview */
+    --mx-tree-text-color: #374151;
+    --mx-tree-background: #ffffff;
+    --mx-tree-border-color: #e5e7eb;
+    
+    /* Selection colors (blue theme from preview) */
+    --mx-tree-selected-background: rgba(59, 130, 246, 0.1);
+    --mx-tree-selected-text: #1d4ed8;
+    --mx-tree-selected-border: #3b82f6;
+    --mx-tree-selected-hover-background: rgba(59, 130, 246, 0.2);
+    
+    /* Hover and focus states */
+    --mx-tree-hover-background: rgba(0, 0, 0, 0.04);
+    --mx-tree-focus-outline: 2px solid #3b82f6;
+    --mx-tree-focus-color: #2196f3;
+    --mx-tree-focus-shadow-color: rgba(33, 150, 243, 0.2);
+    
+    /* Muted colors */
+    --mx-tree-muted-text-color: #6b7280;
+    --mx-tree-separator-color: #9ca3af;
+    --mx-tree-icon-color: #6b7280;
+    --mx-tree-icon-hover-color: #4b5563;
+    
+    /* Spacing and sizing */
+    --mx-tree-node-padding: 8px;
+    --mx-tree-node-height: 32px;
+    --mx-tree-indent-size: 20px;
+    --mx-tree-font-size: 13px;
+    --mx-tree-line-height: 1.5;
+    
+    /* Icon sizing */
+    --mx-tree-icon-size: 16px;
+    --mx-tree-visibility-toggle-size: 20px;
+    
+    /* Tree line styling */
+    --mx-tree-line-color: #e0e0e0;
+    --mx-tree-line-width: 1px;
+    
+    /* Backgrounds */
+    --mx-tree-search-background: #fafafa;
+    --mx-tree-input-background: #ffffff;
+    --mx-tree-sticky-background: #ffffff;
+    --mx-tree-dropdown-background: #ffffff;
+    --mx-tree-breadcrumb-background: #f5f5f5;
+    --mx-tree-category-bg: rgba(0, 0, 0, 0.05);
+    --mx-tree-category-text: rgba(0, 0, 0, 0.6);
+    
+    /* Search specific */
+    --mx-tree-search-icon-color: #9ca3af;
+    --mx-tree-placeholder-color: #9ca3af;
+    
+    /* Highlight color */
+    --mx-tree-highlight-color: rgba(255, 235, 59, 0.3);
+    
+    /* Animation */
+    --mx-tree-transition-duration: 200ms;
+    --mx-tree-transition-easing: ease-in-out;
+    
+    /* Scrollbar */
+    --mx-tree-scrollbar-track: #f1f1f1;
+    --mx-tree-scrollbar-thumb: #c1c1c1;
+    
+    /* Apply default font */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: var(--mx-tree-font-size);
+    color: var(--mx-tree-text-color);
+    background-color: var(--mx-tree-background);
+    border: 1px solid var(--mx-tree-border-color);
+    border-radius: 6px;
+}
+
+/* Even/odd row striping for better readability */
+.mx-tree__node:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Selected node styling */
+.mx-tree__node--selected {
+    background-color: var(--mx-tree-selected-background) !important;
+    color: var(--mx-tree-selected-text);
+    border-left: 3px solid var(--mx-tree-selected-border);
+}
+
+/* Node base styles */
+.mx-tree__node {
+    min-height: var(--mx-tree-node-height);
+    padding: 0 var(--mx-tree-node-padding);
+    border-left: 3px solid transparent;
+    transition: all var(--mx-tree-transition-duration) var(--mx-tree-transition-easing);
+}
+
+/* Node content alignment */
+.mx-tree__node-content {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 4px 0;
+}
+
+/* Icon styling */
+.mx-tree__node-icon,
+.mx-tree__node-expand-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 4px;
+    color: var(--mx-tree-icon-color);
+    font-size: 10px;
+}
+
+/* Expand button and spacer for consistent alignment */
+.mx-tree__node-expand-button,
+.mx-tree__node-expand-spacer {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.mx-tree__node-expand-spacer {
+    display: inline-block;
+}
+
+/* Selection indicators */
+.mx-tree__node-selection {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Checkbox style for multi-select */
+.mx-tree__node-checkbox {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    margin: 0;
+    margin-right: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    /* Reset default browser checkbox styles */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: 2px solid #d1d5db;
+    background-color: white;
+    border-radius: 3px;
+    position: relative;
+    transition: all 0.15s ease;
+}
+
+.mx-tree__node-checkbox:hover {
+    border-color: #9ca3af;
+}
+
+.mx-tree__node-checkbox:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.mx-tree__node-checkbox:checked::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Radio button style for single-select */
+.mx-tree__node-radio {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    margin: 0;
+    margin-right: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    /* Reset default browser radio styles */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: 2px solid #d1d5db;
+    background-color: white;
+    border-radius: 50%;
+    position: relative;
+    transition: all 0.15s ease;
+}
+
+.mx-tree__node-radio:hover {
+    border-color: #9ca3af;
+}
+
+.mx-tree__node-radio:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.mx-tree__node-radio:checked::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: white;
+}
+
+/* Search input styling */
+.mx-tree__search-input {
+    background-color: var(--mx-tree-input-background);
+    color: var(--mx-tree-text-color);
+}
+
+/* Toolbar button styling */
+.mx-tree__button {
+    background-color: transparent;
+    color: var(--mx-tree-text-color);
+    border: 1px solid var(--mx-tree-border-color);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: var(--mx-tree-font-size);
+    cursor: pointer;
+    transition: all var(--mx-tree-transition-duration) var(--mx-tree-transition-easing);
+}
+
+.mx-tree__button:hover:not(:disabled) {
+    background-color: var(--mx-tree-hover-background);
+    border-color: var(--mx-tree-focus-color);
+}
+
+.mx-tree__button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Loading and empty states */
+.mx-tree__loading,
+.mx-tree__empty,
+.mx-tree__unavailable {
+    color: var(--mx-tree-muted-text-color);
+    text-align: center;
+    padding: 40px 20px;
+}
+
+/* Ensure proper contrast in dark mode */
+@media (prefers-color-scheme: dark) {
+    .mx-tree--dark {
+        --mx-tree-text-color: #f3f4f6;
+        --mx-tree-background: #1f2937;
+        --mx-tree-border-color: #374151;
+        --mx-tree-selected-background: rgba(59, 130, 246, 0.3);
+        --mx-tree-selected-text: #60a5fa;
+        --mx-tree-hover-background: rgba(255, 255, 255, 0.1);
+        --mx-tree-muted-text-color: #9ca3af;
+        --mx-tree-search-background: #111827;
+        --mx-tree-input-background: #1f2937;
+    }
+}
+
+/* SVG Icon Sizing and Styling */
+/* Base SVG icon styles - applies to all icon SVGs */
+.mx-tree svg {
+    width: var(--mx-tree-icon-size, 16px);
+    height: var(--mx-tree-icon-size, 16px);
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* Specific icon sizing */
+.mx-tree__node-expand-icon svg,
+.mx-tree__node-expand-icon-svg {
+    width: var(--mx-tree-icon-size, 16px);
+    height: var(--mx-tree-icon-size, 16px);
+    transition: transform var(--mx-tree-transition-duration) var(--mx-tree-transition-easing);
+}
+
+/* Rotate expand icon when expanded */
+.mx-tree__node--expanded .mx-tree__node-expand-icon-svg {
+    transform: rotate(90deg);
+}
+
+/* Visibility icon sizing */
+.mx-tree__node-visibility-icon svg,
+.mx-tree__node-visibility-icon-svg {
+    width: var(--mx-tree-icon-size, 16px);
+    height: var(--mx-tree-icon-size, 16px);
+}
+
+/* Search icon sizing */
+.mx-tree__search-icon svg,
+.mx-tree__search-icon-svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Warning/unavailable icon sizing */
+.mx-tree__icon--warning svg,
+.mx-tree__unavailable-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Toolbar icons */
+.mx-tree__toolbar-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Drag handle icon */
+.mx-tree__node-drag-handle-icon svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Context menu icons */
+.mx-tree-context-menu-item-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Ensure SVG icons inherit color properly */
+.mx-tree svg path,
+.mx-tree svg circle,
+.mx-tree svg rect,
+.mx-tree svg polygon,
+.mx-tree svg line {
+    fill: currentColor;
+}
+
+/* For stroke-based icons (like our chevron and search icons) */
+.mx-tree svg[fill="none"] path,
+.mx-tree svg[fill="none"] circle {
+    fill: none;
+    stroke: currentColor;
+}
+
+/* Search status icons */
+.mx-tree__search-offline-icon svg,
+.mx-tree__search-timeout-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Inline search status spinner */
+.mx-tree__search-spinning svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Breadcrumb icons */
+.mx-tree-breadcrumb-item-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Loading spinner specific styles */
+.mx-tree__loading-spinner svg {
+    width: 32px;
+    height: 32px;
+}
+
+/* Floating/sliding panel specific icon sizes */
+.mx-tree-floating-panel svg,
+.mx-tree-sliding-panel svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Touch-friendly sizes for mobile */
+@media (hover: none) and (pointer: coarse) {
+    .mx-tree__node-expand-icon svg,
+    .mx-tree__node-visibility-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .mx-tree__toolbar-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Tree line enhancements */
+.mx-tree--show-lines .mx-tree__node-line-vertical {
+    background-color: var(--mx-tree-line-color);
+    width: var(--mx-tree-line-width);
+}
+
+.mx-tree--show-lines .mx-tree__node-line-horizontal {
+    background-color: var(--mx-tree-line-color);
+    height: var(--mx-tree-line-width);
+}
+
+/* Last child should not have vertical line extending below */
+.mx-tree--show-lines .mx-tree__node:last-child .mx-tree__node-line-vertical {
+    height: 50%;
+}
+
+/* Adjust line positioning for better alignment */
+.mx-tree--show-lines .mx-tree__node-lines {
+    z-index: 0;
+}
+
+.mx-tree--show-lines .mx-tree__node-content {
+    z-index: 1;
+    position: relative;
+}

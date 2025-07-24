@@ -1,0 +1,350 @@
+/* Floating Tree View - Cascading menu style */
+
+/* Root container for floating tree */
+.mx-tree__floating-root {
+    padding: 8px;
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.mx-tree__floating-root--loading {
+    opacity: 0.7;
+}
+
+.mx-tree__floating-root--unavailable {
+    opacity: 0.5;
+}
+
+/* Individual floating panels */
+.mx-tree__floating-panel {
+    background: var(--mx-tree-bg, white);
+    border: 1px solid var(--mx-tree-border, #e0e0e0);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.mx-tree__floating-panel--level-0 {
+    /* Root level panels might have different styling */
+}
+
+.mx-tree__floating-panel--has-parent {
+    /* Child panels */
+}
+
+/* Panel header */
+.mx-tree__floating-panel-header {
+    padding: 8px 12px;
+    background-color: var(--mx-tree-header-bg, #f5f5f5);
+    border-bottom: 1px solid var(--mx-tree-border, #e0e0e0);
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--mx-tree-header-text, #666);
+}
+
+.mx-tree__floating-panel-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Panel content */
+.mx-tree__floating-panel-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: inherit;
+    padding: 4px 0;
+}
+
+/* Focus styling for keyboard navigation */
+.mx-tree__floating-panel:focus-within {
+    outline: 2px solid var(--mx-tree-focus-color, #007bff);
+    outline-offset: -1px;
+}
+
+/* Empty state */
+.mx-tree__floating-panel-empty {
+    padding: 16px;
+    text-align: center;
+    color: var(--mx-tree-muted, #999);
+    font-style: italic;
+}
+
+/* Node styling in floating panels */
+.mx-tree__floating-panel .mx-tree-node {
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    padding: 6px 12px;
+}
+
+.mx-tree__floating-panel .mx-tree-node:hover {
+    background-color: var(--mx-tree-hover-bg, #f0f0f0);
+}
+
+.mx-tree__floating-panel .mx-tree-node--selected {
+    background-color: var(--mx-tree-selected-bg, #e3f2fd);
+}
+
+.mx-tree__floating-panel .mx-tree-node--focused {
+    outline: 2px solid var(--mx-tree-focus-color, #007bff);
+    outline-offset: -2px;
+}
+
+/* Keyboard navigation indicator */
+.mx-tree__floating-panel .mx-tree-node:focus {
+    outline: 2px solid var(--mx-tree-focus-color, #007bff);
+    outline-offset: -2px;
+}
+
+.mx-tree__floating-panel .mx-tree-node__content {
+    padding-left: 0;
+}
+
+/* Show expand arrow for nodes with children */
+.mx-tree__floating-panel .mx-tree-node__expand-icon {
+    visibility: visible;
+    opacity: 0.5;
+    transform: rotate(-90deg); /* Point right for submenu indicator */
+    margin-left: auto;
+}
+
+.mx-tree__floating-panel .mx-tree-node:hover .mx-tree-node__expand-icon {
+    opacity: 1;
+}
+
+/* Loading bar in floating panels */
+.mx-tree__floating-panel .mx-tree__loading-bar,
+.mx-tree__floating-root .mx-tree__loading-bar {
+    height: 2px;
+}
+
+/* Debug info */
+.mx-tree__floating-debug {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    z-index: 10000;
+}
+
+/* Transitions */
+.mx-tree__floating-panel {
+    transition: opacity 150ms ease, transform 150ms ease;
+}
+
+/* Dark mode support */
+.mx-tree--dark .mx-tree__floating-panel {
+    background: var(--mx-tree-dark-bg, #1e1e1e);
+    border-color: var(--mx-tree-dark-border, #333);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mx-tree--dark .mx-tree__floating-panel-header {
+    background-color: var(--mx-tree-dark-header-bg, #2a2a2a);
+    border-color: var(--mx-tree-dark-border, #333);
+    color: var(--mx-tree-dark-header-text, #ccc);
+}
+
+.mx-tree--dark .mx-tree__floating-panel .mx-tree-node:hover {
+    background-color: var(--mx-tree-dark-hover-bg, #2a2a2a);
+}
+
+.mx-tree--dark .mx-tree__floating-panel .mx-tree-node--selected {
+    background-color: var(--mx-tree-dark-selected-bg, #0d47a1);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .mx-tree__floating-panel {
+        min-width: 180px;
+        max-width: 250px;
+    }
+    
+    .mx-tree__floating-panel-header {
+        padding: 6px 10px;
+    }
+    
+    .mx-tree__floating-panel .mx-tree-node {
+        padding: 8px 10px;
+    }
+}
+
+/* ===== ELASTIC PULL-BACK ANIMATION STYLES ===== */
+
+/* Elastic pull-back animation */
+.mx-tree__panel--elastic-pulling {
+    transition: none !important; /* Disable normal transitions during pull */
+    cursor: grabbing;
+}
+
+/* Enhanced floating panel transitions */
+.mx-tree__floating-panel {
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                opacity 0.3s ease-out;
+    will-change: transform, opacity;
+}
+
+/* Subtle shadow effect during elastic pull */
+.mx-tree__panel--elastic-pulling::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    opacity: var(--pull-shadow-opacity, 0);
+    transition: opacity 0.2s;
+}
+
+/* Touch interaction support */
+.mx-tree__floating-panel[data-touch-enabled="true"] {
+    touch-action: pan-y; /* Allow vertical scrolling, prevent horizontal */
+}
+
+.mx-tree__floating-panel[data-gesture-active="true"] {
+    user-select: none;
+}
+
+/* Touch-friendly sizing for mobile devices */
+@media (pointer: coarse) {
+    .mx-tree__floating-panel {
+        min-width: 280px; /* Larger touch targets */
+    }
+
+    .mx-tree__floating-panel .mx-tree-node {
+        min-height: 44px; /* WCAG touch target minimum */
+        padding: 12px 16px;
+    }
+
+    .mx-tree__floating-panel-header {
+        min-height: 48px;
+        padding: 12px 16px;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .mx-tree__panel--elastic-pulling {
+        outline: 2px solid currentColor;
+        outline-offset: -2px;
+    }
+}
+
+/* Reduce motion support */
+@media (prefers-reduced-motion: reduce) {
+    .mx-tree__floating-panel {
+        transition-duration: 0.01ms !important;
+    }
+    
+    .mx-tree__panel--elastic-pulling {
+        transform: none !important;
+    }
+}
+
+/* Panel positioning states for transform origin */
+.mx-tree__floating-panel--position-left {
+    transform-origin: right center;
+}
+
+.mx-tree__floating-panel--position-right {
+    transform-origin: left center;
+}
+
+.mx-tree__floating-panel--position-top {
+    transform-origin: bottom center;
+}
+
+.mx-tree__floating-panel--position-bottom {
+    transform-origin: top center;
+}
+
+/* Visual swipe hint indicators */
+.mx-tree__floating-panel--swipe-hint {
+    position: relative;
+}
+
+.mx-tree__floating-panel--swipe-hint::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 4px;
+    height: 40px;
+    background: currentColor;
+    opacity: 0.2;
+    border-radius: 2px;
+    transform: translateY(-50%);
+    transition: opacity 0.2s;
+}
+
+.mx-tree__floating-panel--swipe-hint.mx-tree__floating-panel--position-left::before {
+    right: 8px;
+}
+
+.mx-tree__floating-panel--swipe-hint.mx-tree__floating-panel--position-right::before {
+    left: 8px;
+}
+
+/* ===== TRANSFORM PARENT HANDLING ===== */
+
+/* When panel is rendered within a transform parent */
+.mx-tree__floating-panel--transform-parent {
+    /* Use absolute positioning instead of fixed */
+    position: absolute !important;
+}
+
+/* Zoom compensation */
+.mx-tree__floating-panel--zoomed {
+    /* Font size adjustment for zoom */
+    font-size: calc(1rem * var(--zoom-scale, 1));
+}
+
+/* Handle panels in scrollable containers */
+.mx-tree__floating-panel[data-panel-strategy="absolute"] {
+    /* Ensure proper stacking context */
+    isolation: isolate;
+}
+
+/* Special handling for panels in transformed contexts */
+.mx-tree__floating-panel--transform-parent .mx-tree__floating-panel-content {
+    /* Ensure scrolling works properly */
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Fix for blurry text on scaled elements */
+.mx-tree__floating-panel--zoomed * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transform: translateZ(0);
+}
+
+/* Handle iframe contexts */
+.mx-tree__floating-panel--iframe {
+    /* Ensure clicks work properly in iframes */
+    pointer-events: auto;
+}
+
+/* Debug styles for transform parent detection */
+.mx-tree--debug .mx-tree__floating-panel--transform-parent::before {
+    content: "Transform Parent Detected";
+    position: absolute;
+    top: -20px;
+    left: 0;
+    font-size: 10px;
+    color: #ff6b6b;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 4px;
+    border-radius: 2px;
+    z-index: 10000;
+}

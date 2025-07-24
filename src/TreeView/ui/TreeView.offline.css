@@ -1,0 +1,42 @@
+/* Offline state styles */
+.mx-tree--offline {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--tree-background, #f8f9fa);
+    border: 1px solid var(--tree-border-color, #dee2e6);
+    border-radius: var(--tree-border-radius, 4px);
+}
+
+.mx-tree__offline-message {
+    text-align: center;
+    padding: 2rem;
+    max-width: 400px;
+}
+
+.mx-tree__offline-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.mx-tree__offline-text h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--tree-text-color, #212529);
+}
+
+.mx-tree__offline-text p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--tree-text-muted, #6c757d);
+    line-height: 1.5;
+}
+
+/* Disable pointer events when offline */
+.mx-tree--offline * {
+    pointer-events: none;
+    user-select: none;
+}

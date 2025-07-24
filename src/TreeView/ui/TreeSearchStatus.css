@@ -1,0 +1,182 @@
+/* Tree Search Status Styles */
+
+.mx-tree__search-status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+/* Offline notification bar */
+.mx-tree__search-offline-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 4px;
+    color: #856404;
+    font-size: 13px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.mx-tree__search-offline-icon {
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
+/* Server loading indicator */
+.mx-tree__search-server-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 4px;
+    color: #1565c0;
+    font-size: 13px;
+}
+
+.mx-tree__search-loading-spinner {
+    display: flex;
+    gap: 3px;
+}
+
+.mx-tree__search-loading-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: currentColor;
+    animation: searchPulse 1.4s ease-in-out infinite;
+}
+
+.mx-tree__search-loading-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.mx-tree__search-loading-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes searchPulse {
+    0%, 80%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Timeout notice */
+.mx-tree__search-timeout-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    color: #666;
+    font-size: 13px;
+}
+
+.mx-tree__search-timeout-icon {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+/* Result info */
+.mx-tree__search-result-info {
+    font-size: 12px;
+    color: #666;
+    padding: 0 12px;
+}
+
+.mx-tree__search-result-source {
+    opacity: 0.8;
+}
+
+/* Inline status (for search input area) */
+.mx-tree__search-inline-status {
+    display: flex;
+    align-items: center;
+    margin-left: 8px;
+}
+
+.mx-tree__search-inline-spinner,
+.mx-tree__search-inline-offline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.mx-tree__search-spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.mx-tree__search-inline-offline {
+    opacity: 0.6;
+    color: #ff9800;
+}
+
+/* Animation for notification bars */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .mx-tree__search-offline-notice {
+        background-color: #3d3d00;
+        border-color: #5a5a00;
+        color: #ffeb3b;
+    }
+    
+    .mx-tree__search-server-loading {
+        background-color: #002171;
+        border-color: #0d47a1;
+        color: #64b5f6;
+    }
+    
+    .mx-tree__search-timeout-notice {
+        background-color: #2a2a2a;
+        border-color: #404040;
+        color: #b0b0b0;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .mx-tree__search-offline-notice,
+    .mx-tree__search-server-loading,
+    .mx-tree__search-timeout-notice {
+        animation: none;
+    }
+    
+    .mx-tree__search-spinning {
+        animation: none;
+        opacity: 0.5;
+    }
+    
+    .mx-tree__search-loading-dot {
+        animation: none;
+    }
+}

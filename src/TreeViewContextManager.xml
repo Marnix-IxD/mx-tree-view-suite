@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<widget
+    id="theorangeforce.treeview.TreeViewContextManager"
+    pluginWidget="true"
+    needsEntityContext="true"
+    supportedPlatform="Web"
+    xmlns="http://www.mendix.com/widget/1.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.mendix.com/widget/1.0/ ../node_modules/mendix/custom_widget.xsd"
+>
+    <name>Tree View Context Manager</name>
+    <description>Manages selection state and coordination between multiple tree view widgets</description>
+    <icon>
+        iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAABp1BMVEUAAABV//9mzP9LtP9Ms/9Jtv9NsvdJsfpLtPpJsfdJsfhJsvhJsvdKsvdJsPhKsPhJsfdJsPhJsfdIsfhJsfdIsPdJsfhJsfhJsPhJsPhIsfhIsPdJsPdKsPdKsfdNsvdOsvdPs/dQs/dRtPdStPdTtPdUtfdWtvdXtvdauPdcuPdeufdeufhguvhiu/hju/hkvPhmvfhnvfhpvvhrv/huwPhvwfhxwfhywvhzwvh4xfl5xfl6xfl8xvl9xvl9x/mByPmCyfmFyvmGyvmJzPmKzPmLzfmNzvqPzvqQz/qT0PqU0PqU0fqX0vqY0vqa0/qe1fqg1vqj1/uk1/un2fup2vut2/uv3Puw3Puw3fuz3vu13/u23/u34Pu44Pu64fu64fy84vy94vy+4/y/4/zD5fzE5fzG5vzH5vzI5/zK6PzL6PzR6/zT7P3U7P3V7f3W7f3Y7v3Z7v3c8P3e8f3f8f3g8f3i8v3l8/3l9P3n9P3r9v7t9/7u9/7v+P7w+P7x+f7y+f70+v71+v74/P75/P76/f77/f78/f78/v79/v7+/v7////6dMsRAAAAG3RSTlMAAwURGxwhMTNic3SEh4iVp7XBzejt7vH5/f6PsMNWAAABsklEQVR4AWIYfGAUjIJRMAqYuYREJKWJAqLCPGwY+jnFpEkBEryMqPr5pEkFgkwo9kuTDviR/S9GhgFSHAgDuKXJAQIIA4TIMkAcEY4i0mQBVrgBkuQZwA43QJo8wIFhQEhEOIBQOutHJozDOP5Crp4e1RhkJ0tKGJFd6oNEdtmJyEIzpaZl5nrRZgaHM/2Pf5/vwXXfyagXgG93bwSAlEolowLMm9w83gibhXH2gKKVdD67gTnWjwCk+VVjMQS4suSnnjMLRVFc9sAHvAX2A9fySaXNBMbEZVUWscaHIMRuqwBgD8hDEbnsRmfjUKJkAQZGCTlO/xWBwIADQLIZBlY441MvfoF1xlFS/4fy+bzXKh4dgNJE7L3eh3tmtuWa+AMcMIY3dgUvZQpGEYmMw2kD7HC+R29UqyoXLaBd0QZxzgXgikLLDSqJTKU5HOcS0MsbA9jPqtwCRvXm2eorBbNIJBw3KJ9O4Yl+AAXdnyaLt7PWN3jRWLvzmAVp94zO5+n41/onfo/UpExxZqI0O7NQr0DhIq9Io7hQpbRYp7hiobRqo6ByFcNWuY6CUTAKRgEAo8X0lBD3V30AAAAASUVORK5CYII=
+    </icon>
+    <properties>
+        <propertyGroup caption="General">
+            <propertyGroup caption="Basic Configuration">
+                <property key="content" type="widgets" required="true">
+                    <caption>Content</caption>
+                    <description>
+                        Place your tree view widgets here. They will be automatically managed by this context manager.
+                    </description>
+                </property>
+                <property key="treeViewNodeEntityType" type="datasource" isList="true" defaultType="Database" defaultValue="TreeViewSuite.TreeNode" required="true">
+                    <caption>Tree node entity</caption>
+                    <description>The entity type that all managed tree views work with</description>
+                </property>
+                <property key="selectionMode" type="enumeration" defaultValue="multiple">
+                    <caption>Selection mode</caption>
+                    <description>Default selection mode for all trees (can be overridden per tree)</description>
+                    <enumerationValues>
+                        <enumerationValue key="none">None</enumerationValue>
+                        <enumerationValue key="single">Single</enumerationValue>
+                        <enumerationValue key="multiple">Multiple</enumerationValue>
+                    </enumerationValues>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+
+        <propertyGroup caption="Managed Tree Views">
+            <property key="managedTreeViews" type="object" isList="true">
+                <caption>Managed tree views</caption>
+                <description>Configure each tree view that should be managed by this context</description>
+                <properties>
+                    <propertyGroup caption="Tree Identification">
+                        <property key="treeIdentifier" type="string" required="true">
+                            <caption>Tree identifier</caption>
+                            <description>Unique identifier or CSS class name for this tree widget</description>
+                        </property>
+                        <property key="displayName" type="string" required="false">
+                            <caption>Display name</caption>
+                            <description>Friendly name for this tree (used in debug mode)</description>
+                        </property>
+                    </propertyGroup>
+
+                    <propertyGroup caption="Selection Configuration">
+                        <property
+                            key="selectionAssociation"
+                            type="association"
+                            selectableObjects="../treeViewNodeEntityType"
+                            required="true"
+                            isPath="no"
+                        >
+                            <caption>Selection association</caption>
+                            <description>Association from context object to selected nodes for this tree</description>
+                            <associationTypes>
+                                <associationType name="ReferenceSet" />
+                            </associationTypes>
+                        </property>
+                        <property key="overrideSelectionMode" type="boolean" defaultValue="false">
+                            <caption>Override selection mode</caption>
+                            <description>Use a different selection mode for this tree</description>
+                        </property>
+                        <property key="treeSelectionMode" type="enumeration" defaultValue="multiple">
+                            <caption>Tree selection mode</caption>
+                            <description>Selection mode for this specific tree</description>
+                            <enumerationValues>
+                                <enumerationValue key="none">None</enumerationValue>
+                                <enumerationValue key="single">Single</enumerationValue>
+                                <enumerationValue key="multiple">Multiple</enumerationValue>
+                            </enumerationValues>
+                        </property>
+                        <property key="maxSelectionCount" type="integer" defaultValue="0">
+                            <caption>Max selection count</caption>
+                            <description>Maximum selections for this tree (0 = unlimited)</description>
+                        </property>
+                    </propertyGroup>
+
+                    <propertyGroup caption="State Tracking">
+                        <property key="selectedCountAttribute" type="attribute" required="false">
+                            <caption>Selected count attribute</caption>
+                            <description>Integer attribute to track selection count for this tree</description>
+                            <attributeTypes>
+                                <attributeType name="Integer" />
+                                <attributeType name="Long" />
+                            </attributeTypes>
+                        </property>
+                        <property key="lastUpdateAttribute" type="attribute" required="false">
+                            <caption>Last update attribute</caption>
+                            <description>DateTime attribute to track last selection change</description>
+                            <attributeTypes>
+                                <attributeType name="DateTime" />
+                            </attributeTypes>
+                        </property>
+                        <property key="isActiveAttribute" type="attribute" required="false">
+                            <caption>Is active attribute</caption>
+                            <description>
+                                Boolean attribute to track if this tree is currently active/focused
+                            </description>
+                            <attributeTypes>
+                                <attributeType name="Boolean" />
+                            </attributeTypes>
+                        </property>
+                    </propertyGroup>
+
+                    <propertyGroup caption="Styling">
+                        <property key="treeContainerClass" type="expression" required="false">
+                            <caption>Tree container class</caption>
+                            <description>Dynamic CSS class for this tree's container element</description>
+                            <returnType type="String" />
+                        </property>
+                        <property key="treeLayoutWeight" type="integer" defaultValue="1">
+                            <caption>Layout weight</caption>
+                            <description>
+                                Relative width weight when displaying multiple trees (flex-grow value)
+                            </description>
+                        </property>
+                    </propertyGroup>
+
+                    <propertyGroup caption="Tree-Specific Actions">
+                        <property key="onSelectionChange" type="action" required="false">
+                            <caption>On selection change</caption>
+                            <description>Action when selection changes in this tree</description>
+                        </property>
+                        <property key="onMaxSelectionReached" type="action" required="false">
+                            <caption>On max selection reached</caption>
+                            <description>Action when user tries to exceed max selection</description>
+                        </property>
+                        <property key="beforeSelectionChange" type="action" required="false">
+                            <caption>Before selection change</caption>
+                            <description>Validation action (return false to cancel)</description>
+                        </property>
+                    </propertyGroup>
+
+                    <propertyGroup caption="Drag and Drop Rules">
+                        <property key="allowDragFrom" type="boolean" defaultValue="true">
+                            <caption>Allow drag from</caption>
+                            <description>Allow dragging items from this tree</description>
+                        </property>
+                        <property key="allowDropTo" type="boolean" defaultValue="true">
+                            <caption>Allow drop to</caption>
+                            <description>Allow dropping items into this tree</description>
+                        </property>
+                        <property key="allowedDropSources" type="textTemplate" required="false">
+                            <caption>Allowed drop sources</caption>
+                            <description>
+                                Comma-separated list of tree identifiers that can drop into this tree (empty = all allowed)
+                            </description>
+                        </property>
+                        <property key="dragRestriction" type="enumeration" defaultValue="none">
+                            <caption>Drag restriction</caption>
+                            <description>Restrict drag movement to prevent accidental drops</description>
+                            <enumerationValues>
+                                <enumerationValue key="none">No restriction</enumerationValue>
+                                <enumerationValue key="horizontal">Horizontal only</enumerationValue>
+                                <enumerationValue key="vertical">Vertical only</enumerationValue>
+                                <enumerationValue key="toTarget">To target zones only</enumerationValue>
+                            </enumerationValues>
+                        </property>
+                        <property key="allowReverseTransfer" type="boolean" defaultValue="true">
+                            <caption>Allow reverse transfer</caption>
+                            <description>Allow items to be dragged back to their source tree</description>
+                        </property>
+                        <property key="restrictDragDistance" type="integer" defaultValue="0">
+                            <caption>Max drag distance (px)</caption>
+                            <description>
+                                Maximum pixels items can be dragged from this tree (0 = unlimited)
+                            </description>
+                        </property>
+                        <property key="dragDirectionBias" type="enumeration" defaultValue="none">
+                            <caption>Drag direction bias</caption>
+                            <description>
+                                Preferred drag direction from this tree (adds resistance to opposite direction)
+                            </description>
+                            <enumerationValues>
+                                <enumerationValue key="none">No bias</enumerationValue>
+                                <enumerationValue key="left">Prefer left</enumerationValue>
+                                <enumerationValue key="right">Prefer right</enumerationValue>
+                                <enumerationValue key="up">Prefer up</enumerationValue>
+                                <enumerationValue key="down">Prefer down</enumerationValue>
+                            </enumerationValues>
+                        </property>
+                        <property key="biasResistance" type="decimal" defaultValue="0.3">
+                            <caption>Bias resistance</caption>
+                            <description>
+                                Resistance factor when dragging against bias (0 = none, 1 = immovable)
+                            </description>
+                        </property>
+                        <property key="biasElasticity" type="boolean" defaultValue="true">
+                            <caption>Elastic bias</caption>
+                            <description>
+                                Snap back towards bias direction when released in opposite direction
+                            </description>
+                        </property>
+                        <property key="dropZoneHighlightColor" type="expression" required="false">
+                            <caption>Drop zone highlight color</caption>
+                            <description>CSS color for highlighting valid drop zones from this tree</description>
+                            <returnType type="String" />
+                        </property>
+                        <property key="magneticDropZones" type="boolean" defaultValue="false">
+                            <caption>Magnetic drop zones</caption>
+                            <description>Gently pull items towards valid drop zones when nearby</description>
+                        </property>
+                        <property key="magneticRange" type="integer" defaultValue="50">
+                            <caption>Magnetic range (px)</caption>
+                            <description>Distance from drop zone where magnetic effect starts</description>
+                        </property>
+                    </propertyGroup>
+                </properties>
+            </property>
+        </propertyGroup>
+
+        <propertyGroup caption="Global State Management">
+            <propertyGroup caption="Shared Attributes">
+                <property key="totalSelectedCountAttribute" type="attribute" required="false">
+                    <caption>Total selected count</caption>
+                    <description>Integer attribute to store total count of selected items across all trees</description>
+                    <attributeTypes>
+                        <attributeType name="Integer" />
+                        <attributeType name="Long" />
+                    </attributeTypes>
+                </property>
+                <property key="lastGlobalUpdateAttribute" type="attribute" required="false">
+                    <caption>Last global update</caption>
+                    <description>DateTime attribute to track any selection change across all trees</description>
+                    <attributeTypes>
+                        <attributeType name="DateTime" />
+                    </attributeTypes>
+                </property>
+                <property key="activeTreeIdAttribute" type="attribute" required="false">
+                    <caption>Active tree ID</caption>
+                    <description>String attribute identifying which tree view is currently active/focused</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="globalSelectionStateAttribute" type="attribute" required="false">
+                    <caption>Global selection state</caption>
+                    <description>String attribute to store complete selection state (JSON)</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+
+            <propertyGroup caption="Global Actions">
+                <property key="onAnySelectionChange" type="action" required="false">
+                    <caption>On any selection change</caption>
+                    <description>Action when selection changes in any tree</description>
+                </property>
+                <property key="onAllSelectionsCleared" type="action" required="false">
+                    <caption>On all selections cleared</caption>
+                    <description>Action when all trees have their selections cleared</description>
+                </property>
+                <property key="onActiveTreeChange" type="action" required="false">
+                    <caption>On active tree change</caption>
+                    <description>Action when focus switches between trees</description>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+
+        <propertyGroup caption="Cross-Tree Coordination">
+            <propertyGroup caption="Focus and Hover State">
+                <property key="focusedNodeIdAttribute" type="attribute" required="false">
+                    <caption>Focused node ID</caption>
+                    <description>String attribute for currently focused node across all trees</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="hoveredNodeIdAttribute" type="attribute" required="false">
+                    <caption>Hovered node ID</caption>
+                    <description>String attribute for currently hovered node across all trees</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="focusedTreeIdAttribute" type="attribute" required="false">
+                    <caption>Focused tree ID</caption>
+                    <description>String attribute identifying which tree contains the focused node</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+
+            <propertyGroup caption="Inter-Tree Commands">
+                <property key="commandQueueAttribute" type="attribute" required="false">
+                    <caption>Command queue</caption>
+                    <description>String attribute to store inter-tree commands (JSON array)</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+                <property key="commandTimestampAttribute" type="attribute" required="false">
+                    <caption>Command timestamp</caption>
+                    <description>DateTime attribute for command synchronization</description>
+                    <attributeTypes>
+                        <attributeType name="DateTime" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+
+            <propertyGroup caption="Batch Operations">
+                <property key="batchOperationStatusAttribute" type="attribute" required="false">
+                    <caption>Batch operation status</caption>
+                    <description>Enumeration attribute for batch operation status</description>
+                    <attributeTypes>
+                        <attributeType name="Enum" />
+                    </attributeTypes>
+                </property>
+                <property key="batchProgressAttribute" type="attribute" required="false">
+                    <caption>Batch progress</caption>
+                    <description>Decimal attribute for batch operation progress (0-100)</description>
+                    <attributeTypes>
+                        <attributeType name="Decimal" />
+                    </attributeTypes>
+                </property>
+                <property key="currentBatchIdAttribute" type="attribute" required="false">
+                    <caption>Current batch ID</caption>
+                    <description>String attribute for tracking current batch operation</description>
+                    <attributeTypes>
+                        <attributeType name="String" />
+                    </attributeTypes>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+
+        <propertyGroup caption="Cross-Tree Operations">
+            <propertyGroup caption="Global Drag and Drop Settings">
+                <property key="enableCrossTreeDragDrop" type="boolean" defaultValue="true">
+                    <caption>Enable cross-tree drag and drop</caption>
+                    <description>Master switch to allow dragging nodes between managed tree views</description>
+                </property>
+                <property key="defaultDragDropMode" type="enumeration" defaultValue="move">
+                    <caption>Default drag and drop mode</caption>
+                    <description>
+                        Default operation when dragging between trees (can be overridden per tree)
+                    </description>
+                    <enumerationValues>
+                        <enumerationValue key="move">Move</enumerationValue>
+                        <enumerationValue key="copy">Copy</enumerationValue>
+                        <enumerationValue key="ask">Ask user</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="orphanHandling" type="enumeration" defaultValue="includeDescendants">
+                    <caption>Orphan handling</caption>
+                    <description>How to handle child nodes when moving parents</description>
+                    <enumerationValues>
+                        <enumerationValue key="includeDescendants">Include all descendants</enumerationValue>
+                        <enumerationValue key="excludeDescendants">Exclude descendants</enumerationValue>
+                        <enumerationValue key="promoteOrphans">Promote orphans to parent level</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="showDragPreview" type="boolean" defaultValue="true">
+                    <caption>Show drag preview</caption>
+                    <description>Display preview of dragged items during drag operation</description>
+                </property>
+                <property key="maxDragPreviewItems" type="integer" defaultValue="5">
+                    <caption>Max drag preview items</caption>
+                    <description>Maximum number of items to show in drag preview</description>
+                </property>
+                <property key="showDropZoneIndicators" type="boolean" defaultValue="true">
+                    <caption>Show drop zone indicators</caption>
+                    <description>Highlight valid drop targets during drag operations</description>
+                </property>
+                <property key="dropZoneHighlightDelay" type="integer" defaultValue="200">
+                    <caption>Drop zone highlight delay (ms)</caption>
+                    <description>Delay before highlighting drop zones to prevent flashing</description>
+                </property>
+                <property key="dragFeedbackStyle" type="enumeration" defaultValue="modern">
+                    <caption>Drag feedback style</caption>
+                    <description>Visual style for drag and drop feedback</description>
+                    <enumerationValues>
+                        <enumerationValue key="minimal">Minimal</enumerationValue>
+                        <enumerationValue key="modern">Modern (with physics)</enumerationValue>
+                        <enumerationValue key="playful">Playful (with animations)</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="enableHapticFeedback" type="boolean" defaultValue="true">
+                    <caption>Enable haptic feedback</caption>
+                    <description>Vibration feedback on mobile devices during drag operations</description>
+                </property>
+            </propertyGroup>
+
+            <propertyGroup caption="Global Transfer Actions">
+                <property key="beforeAnyTransfer" type="action" required="false">
+                    <caption>Before any transfer</caption>
+                    <description>Global validation for any transfer operation (return false to cancel)</description>
+                </property>
+                <property key="onAnyTransfer" type="action" required="false">
+                    <caption>On any transfer</caption>
+                    <description>Action to execute after any successful transfer</description>
+                </property>
+                <property key="onTransferError" type="action" required="false">
+                    <caption>On transfer error</caption>
+                    <description>Action when any transfer operation fails</description>
+                </property>
+                <property key="onBatchTransferComplete" type="action" required="false">
+                    <caption>On batch transfer complete</caption>
+                    <description>Action when a batch transfer operation completes</description>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+
+        <propertyGroup caption="Performance">
+            <propertyGroup caption="Selection Optimization">
+                <property key="viewportOptimization" type="boolean" defaultValue="true">
+                    <caption>Viewport optimization</caption>
+                    <description>Only query selection state for visible nodes</description>
+                </property>
+                <property key="selectionQueryBatchSize" type="integer" defaultValue="100">
+                    <caption>Selection query batch size</caption>
+                    <description>Number of nodes to query per batch</description>
+                </property>
+                <property key="selectionDebounceDelay" type="integer" defaultValue="50">
+                    <caption>Selection debounce delay (ms)</caption>
+                    <description>Delay for batching rapid selection changes</description>
+                </property>
+                <property key="maxCachedSelections" type="integer" defaultValue="10000">
+                    <caption>Max cached selections</caption>
+                    <description>Maximum number of selection states to cache in memory</description>
+                </property>
+            </propertyGroup>
+
+            <propertyGroup caption="Progressive Loading">
+                <property key="progressiveLoadThreshold" type="integer" defaultValue="1000">
+                    <caption>Progressive load threshold</caption>
+                    <description>Number of selections before enabling progressive loading</description>
+                </property>
+                <property key="prefetchMultiplier" type="decimal" defaultValue="0.5">
+                    <caption>Prefetch multiplier</caption>
+                    <description>How much to prefetch beyond viewport (0.5 = 50%)</description>
+                </property>
+                <property key="memoryCleanupInterval" type="integer" defaultValue="60000">
+                    <caption>Memory cleanup interval (ms)</caption>
+                    <description>Interval for garbage collection of cached data</description>
+                </property>
+            </propertyGroup>
+
+            <propertyGroup caption="Batch Processing">
+                <property key="batchCommitThreshold" type="integer" defaultValue="50">
+                    <caption>Batch commit threshold</caption>
+                    <description>Number of items per batch for large operations</description>
+                </property>
+                <property key="batchProcessingDelay" type="integer" defaultValue="100">
+                    <caption>Batch processing delay (ms)</caption>
+                    <description>Delay between batch operations for UI responsiveness</description>
+                </property>
+                <property key="enableBackgroundProcessing" type="boolean" defaultValue="true">
+                    <caption>Enable background processing</caption>
+                    <description>Process large operations in background</description>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+
+        <propertyGroup caption="Developer">
+            <propertyGroup caption="Debugging">
+                <property key="debugMode" type="boolean" defaultValue="false">
+                    <caption>Debug mode</caption>
+                    <description>Show performance metrics and debug information</description>
+                </property>
+                <property key="logLevel" type="enumeration" defaultValue="error">
+                    <caption>Log level</caption>
+                    <description>Console logging verbosity</description>
+                    <enumerationValues>
+                        <enumerationValue key="none">None</enumerationValue>
+                        <enumerationValue key="error">Error</enumerationValue>
+                        <enumerationValue key="warn">Warning</enumerationValue>
+                        <enumerationValue key="info">Info</enumerationValue>
+                        <enumerationValue key="debug">Debug</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="performanceOverlay" type="boolean" defaultValue="false">
+                    <caption>Performance overlay</caption>
+                    <description>Show real-time performance metrics overlay</description>
+                </property>
+            </propertyGroup>
+
+            <propertyGroup caption="Advanced">
+                <property key="subscriptionStrategy" type="enumeration" defaultValue="smart">
+                    <caption>Subscription strategy</caption>
+                    <description>How to manage Mendix data subscriptions</description>
+                    <enumerationValues>
+                        <enumerationValue key="eager">Eager (subscribe immediately)</enumerationValue>
+                        <enumerationValue key="lazy">Lazy (subscribe on demand)</enumerationValue>
+                        <enumerationValue key="smart">Smart (automatic based on size)</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="enableWebWorkers" type="boolean" defaultValue="true">
+                    <caption>Enable web workers</caption>
+                    <description>Use web workers for heavy computations</description>
+                </property>
+            </propertyGroup>
+
+            <propertyGroup caption="Styling">
+                <property key="containerClass" type="expression" required="false">
+                    <caption>Container class</caption>
+                    <description>Dynamic CSS class for the main context manager container</description>
+                    <returnType type="String" />
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+    </properties>
+</widget>

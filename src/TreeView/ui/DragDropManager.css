@@ -1,0 +1,43 @@
+/* DragDropManager.css - Drag drop manager styles */
+
+.drag-drop-error-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff4d4f;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10001;
+    animation: slideUp 300ms ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translate(-50%, 100%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+.drag-drop-error-toast::before {
+    content: "⚠️";
+    margin-right: 8px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+    .drag-drop-error-toast {
+        left: 10px;
+        right: 10px;
+        transform: none;
+        text-align: center;
+    }
+}

@@ -1,0 +1,346 @@
+/* Tree Drag & Drop Styles */
+
+/* Drag Handle */
+.mx-tree__node-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 4px;
+    cursor: grab;
+    color: var(--mx-tree-drag-handle-color, #999);
+    opacity: 0;
+    transition: opacity var(--mx-tree-transition-duration) var(--mx-tree-transition-easing);
+    flex-shrink: 0;
+}
+
+.mx-tree__node-drag-handle:active {
+    cursor: grabbing;
+}
+
+.mx-tree__node-drag-handle--visible {
+    opacity: 1;
+}
+
+.mx-tree__node-drag-handle--touch {
+    opacity: 1 !important; /* Always visible on touch devices */
+}
+
+.mx-tree__node:hover .mx-tree__node-drag-handle {
+    opacity: 1;
+}
+
+.mx-tree__node-drag-handle-icon {
+    font-size: 12px;
+    line-height: 1;
+    letter-spacing: 2px;
+}
+
+/* Native drag preview styles */
+.mx-tree__drag-preview--native {
+    background: var(--mx-tree-drag-preview-background, white);
+    border: 2px solid var(--mx-tree-drag-preview-border, #1890ff);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    min-width: 150px;
+    max-width: 300px;
+}
+
+.mx-tree__drag-preview--native .mx-tree__drag-stack {
+    position: relative;
+    width: 100%;
+    height: auto;
+}
+
+.mx-tree__drag-preview--native .mx-tree__drag-preview-item {
+    background: white;
+    border: 1px solid var(--mx-tree-border-color);
+    padding: 4px 8px;
+    margin-bottom: 2px;
+    border-radius: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.mx-tree__drag-preview--native .mx-tree__drag-preview-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--mx-tree-drag-badge-background, #1890ff);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Drag Layer */
+.mx-tree__drag-layer,
+.mx-tree__drag-preview-container {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+}
+
+.mx-tree__drag-preview {
+    background: var(--mx-tree-drag-preview-background, white);
+    border: 2px solid var(--mx-tree-drag-preview-border, #1890ff);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    min-width: 200px;
+    max-width: 400px;
+}
+
+.mx-tree__drag-preview-content {
+    max-height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.mx-tree__drag-preview-item {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mx-tree__drag-preview-icon {
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.mx-tree__drag-preview-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mx-tree__drag-preview-count {
+    padding: 4px 8px;
+    border-top: 1px solid var(--mx-tree-border-color);
+    margin-top: 4px;
+    font-style: italic;
+    color: var(--mx-tree-muted-text-color, #666);
+}
+
+.mx-tree__drag-preview-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--mx-tree-drag-badge-background, #1890ff);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Drop Indicators */
+.mx-tree__drop-indicator {
+    height: 2px;
+    background: var(--mx-tree-drop-indicator-color, #1890ff);
+    position: relative;
+    margin: 0;
+    pointer-events: none;
+}
+
+.mx-tree__drop-indicator::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    background: var(--mx-tree-drop-indicator-color, #1890ff);
+    border-radius: 50%;
+}
+
+.mx-tree__drop-indicator--before {
+    margin-top: -1px;
+}
+
+.mx-tree__drop-indicator--after {
+    margin-bottom: -1px;
+}
+
+/* Node Drag States */
+.mx-tree__node.mx-tree__node--dragging {
+    cursor: grabbing !important;
+}
+
+.mx-tree__node.mx-tree__node--dragged-over {
+    background-color: var(--mx-tree-drag-over-background, rgba(24, 144, 255, 0.04));
+}
+
+.mx-tree__node.mx-tree__node--drop-inside {
+    outline: 2px solid var(--mx-tree-drop-inside-outline, #1890ff);
+    outline-offset: -2px;
+}
+
+/* Auto-expand indicator */
+.mx-tree__node.mx-tree__node--auto-expand-pending::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--mx-tree-auto-expand-color, #1890ff);
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: mx-tree-auto-expand-spin 1s linear infinite;
+}
+
+@keyframes mx-tree-auto-expand-spin {
+    to {
+        transform: translateY(-50%) rotate(360deg);
+    }
+}
+
+/* Drag over effects */
+.mx-tree--dragging * {
+    user-select: none !important;
+}
+
+/* Invalid drop target */
+.mx-tree__node.mx-tree__node--invalid-drop {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Scroll indicators during drag */
+.mx-tree__scroll-indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 40px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.mx-tree__scroll-indicator--top {
+    top: 0;
+    background: linear-gradient(to bottom, var(--mx-tree-scroll-indicator-color, rgba(24, 144, 255, 0.2)), transparent);
+}
+
+.mx-tree__scroll-indicator--bottom {
+    bottom: 0;
+    background: linear-gradient(to top, var(--mx-tree-scroll-indicator-color, rgba(24, 144, 255, 0.2)), transparent);
+}
+
+/* Default constraint violation feedback */
+.mx-tree__node.mx-tree__node--constraint-violation {
+    background-color: var(--mx-tree-constraint-violation-background, rgba(255, 0, 0, 0.05));
+    border: 1px solid var(--mx-tree-constraint-violation-border, rgba(255, 0, 0, 0.2));
+    cursor: not-allowed;
+}
+
+.mx-tree__node.mx-tree__node--constraint-violation .mx-tree__node-content {
+    opacity: 0.6;
+}
+
+/* Pattern-specific visual hints */
+.mx-tree__constraint-hint {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 11px;
+    border-radius: 3px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 100;
+}
+
+/* Same parent only constraint */
+.mx-tree__node.mx-tree__node--same-parent-constraint::after {
+    content: '↔';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--mx-tree-muted-text-color, #999);
+    font-size: 14px;
+}
+
+/* Category constraint indicators */
+.mx-tree__node.mx-tree__node--category-locked {
+    border-left: 3px solid var(--mx-tree-category-locked-color, #ff9800);
+}
+
+/* Depth constraint indicators */
+.mx-tree__node.mx-tree__node--max-depth-reached {
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        var(--mx-tree-max-depth-background, rgba(255, 0, 0, 0.05)) 10px,
+        var(--mx-tree-max-depth-background, rgba(255, 0, 0, 0.05)) 20px
+    );
+}
+
+/* Visual feedback for allowed drop zones */
+.mx-tree__node.mx-tree__node--allowed-drop {
+    background-color: var(--mx-tree-allowed-drop-background, rgba(76, 175, 80, 0.1));
+    border: 1px dashed var(--mx-tree-allowed-drop-border, #4caf50);
+}
+
+.mx-tree__node.mx-tree__node--forbidden-drop {
+    background-color: var(--mx-tree-forbidden-drop-background, rgba(244, 67, 54, 0.1));
+    border: 1px dashed var(--mx-tree-forbidden-drop-border, #f44336);
+}
+
+/* Constraint pattern badges */
+.mx-tree__constraint-badges {
+    display: flex;
+    gap: 4px;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+}
+
+.mx-tree__constraint-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 4px;
+    height: 16px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    font-size: 10px;
+    color: var(--mx-tree-muted-text-color, #666);
+}
+
+.mx-tree__constraint-badge--active {
+    background: var(--mx-tree-constraint-badge--active, #1890ff);
+    color: white;
+}
+
+/* Stacked drag items with constraint violations */
+.mx-tree__drag-preview--constraint-violation {
+    border-color: var(--mx-tree-constraint-violation-border, #f44336);
+    background-color: var(--mx-tree-constraint-violation-background, rgba(244, 67, 54, 0.05));
+}
+
+.mx-tree__drag-preview--constraint-violation .mx-tree__drag-preview-badge {
+    background: var(--mx-tree-constraint-violation-badge, #f44336);
+}

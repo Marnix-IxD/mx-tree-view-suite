@@ -1,0 +1,151 @@
+/* TreeView Main Styles - Ultra Minimalistic */
+@import "./TreeView.utilities.css";
+
+/* Base widget container */
+.mx-tree {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* External navigation highlight */
+.mx-tree__node.mx-tree__node--highlighted {
+    animation: mx-tree-highlight 2s ease-in-out;
+}
+
+@keyframes mx-tree-highlight {
+    0%, 100% { background-color: transparent; }
+    20%, 80% { background-color: var(--mx-tree-highlight-color, rgba(255, 235, 59, 0.3)); }
+}
+
+/* Toolbar */
+.mx-tree__toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    flex-shrink: 0;
+}
+
+/* Buttons */
+.mx-tree__button {
+    padding: 6px 12px;
+    border: 1px solid var(--mx-tree-border-color);
+    background: transparent;
+    cursor: pointer;
+    transition: opacity var(--mx-tree-transition-duration) var(--mx-tree-transition-easing);
+}
+
+.mx-tree__button:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.mx-tree__button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Loading state */
+.mx-tree__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    gap: 12px;
+}
+
+.mx-tree__loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--mx-tree-border-color);
+    border-top-color: var(--mx-tree-text-color);
+    border-radius: 50%;
+    animation: mx-tree-spin 0.8s linear infinite;
+}
+
+@keyframes mx-tree-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.mx-tree__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    opacity: 0.6;
+}
+
+/* Unavailable state */
+.mx-tree__unavailable {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    gap: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.mx-tree__unavailable-icon {
+    font-size: 32px;
+    opacity: 0.5;
+}
+
+.mx-tree__unavailable-message {
+    opacity: 0.7;
+}
+
+/* Debug metrics overlay */
+.mx-tree__metrics {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 8px 12px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    font-size: 12px;
+    font-family: monospace;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.mx-tree__metric {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.mx-tree__metric-label {
+    opacity: 0.8;
+}
+
+.mx-tree__metric-value {
+    font-weight: bold;
+}
+
+/* Reset styles for maximum customizability */
+.mx-tree * {
+    box-sizing: border-box;
+}
+
+.mx-tree button {
+    font: inherit;
+    color: inherit;
+    border-radius: 0;
+}
+
+/* Print styles */
+@media print {
+    .mx-tree__toolbar,
+    .mx-tree__metrics {
+        display: none !important;
+    }
+    
+    .mx-tree {
+        border: none;
+    }
+}

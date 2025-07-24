@@ -1,0 +1,152 @@
+/**
+ * Tree View Search Highlight Animations
+ * Visual feedback for search matches when the matched text isn't visible
+ */
+
+/* Pulse animation for search matches */
+@keyframes mx-tree-search-pulse {
+    0% {
+        background-color: transparent;
+        box-shadow: none;
+    }
+    50% {
+        background-color: var(--mx-tree-search-pulse-bg, rgba(255, 200, 0, 0.3));
+        box-shadow: inset 0 0 0 2px var(--mx-tree-search-pulse-border, rgba(255, 200, 0, 0.5));
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: none;
+    }
+}
+
+/* Quick flash animation for immediate feedback */
+@keyframes mx-tree-search-flash {
+    0%, 100% {
+        background-color: transparent;
+    }
+    20%, 80% {
+        background-color: var(--mx-tree-search-flash-bg, rgba(255, 235, 59, 0.3));
+    }
+}
+
+/* Search match pulse - applied when node matches search but text isn't visible */
+.mx-tree__node.mx-tree__node--search-match {
+    animation: mx-tree-search-pulse 2s ease-in-out;
+}
+
+/* Quick flash when navigating to search result */
+.mx-tree__node.mx-tree__node--search-flash {
+    animation: mx-tree-search-flash 0.6s ease-out;
+}
+
+/* Enhanced highlight state for search matches - persists during search */
+.mx-tree__node.mx-tree__node--search-highlighted {
+    background-color: var(--mx-tree-search-highlight-bg, rgba(255, 200, 0, 0.15));
+    position: relative;
+}
+
+/* Visual indicator for hidden search matches */
+.mx-tree__node.mx-tree__node--search-highlighted::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background-color: var(--mx-tree-search-indicator-color, #ff9800);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.3);
+}
+
+/* Text highlighting for when search text IS visible */
+.mx-tree__search-highlight {
+    background-color: var(--mx-tree-search-text-bg, rgba(255, 200, 0, 0.4));
+    color: inherit;
+    font-weight: 600;
+    padding: 0 2px;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.2);
+}
+
+/* Search status messages */
+.mx-tree__search-status {
+    font-size: 0.85em;
+    color: var(--mx-tree-muted-text-color, #666);
+    padding: 4px 8px;
+    text-align: center;
+}
+
+.mx-tree__search-status--no-results {
+    color: var(--mx-tree-warning-color, #ff9800);
+}
+
+/* Loading indicator for search operations */
+.mx-tree__search-loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.mx-tree__search-loading::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--mx-tree-primary-color, #3b82f6),
+        transparent
+    );
+    animation: mx-tree-search-loading 1.5s linear infinite;
+}
+
+@keyframes mx-tree-search-loading {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .mx-tree__node.mx-tree__node--search-highlighted {
+        background-color: var(--mx-tree-search-highlight-bg-dark, rgba(255, 200, 0, 0.25));
+    }
+    
+    .mx-tree__search-highlight {
+        background-color: var(--mx-tree-search-text-bg-dark, rgba(255, 200, 0, 0.6));
+        box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.4);
+    }
+}
+
+/* Accessibility - reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .mx-tree__node.mx-tree__node--search-match,
+    .mx-tree__node.mx-tree__node--search-flash {
+        animation: none;
+    }
+    
+    .mx-tree__node.mx-tree__node--search-match {
+        background-color: var(--mx-tree-search-pulse-bg, rgba(255, 200, 0, 0.3));
+        box-shadow: inset 0 0 0 2px var(--mx-tree-search-pulse-border, rgba(255, 200, 0, 0.5));
+    }
+    
+    .mx-tree__search-loading::after {
+        animation: none;
+        background: var(--mx-tree-primary-color, #3b82f6);
+    }
+}
+
+/* Combined states */
+.mx-tree__node.mx-tree__node--selected.mx-tree__node--search-highlighted {
+    background-color: var(--mx-tree-search-selected-bg, rgba(255, 180, 0, 0.2));
+}
+
+.mx-tree__node.mx-tree__node--search-highlighted:hover:not(.mx-tree__node--dragging) {
+    background-color: var(--mx-tree-search-hover-bg, rgba(255, 200, 0, 0.2));
+}

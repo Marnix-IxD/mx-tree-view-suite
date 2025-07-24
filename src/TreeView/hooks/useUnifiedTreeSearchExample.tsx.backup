@@ -1,0 +1,304 @@
+import { ReactElement, useMemo, createElement } from "react";
+import { useUnifiedTreeSearch } from "./useUnifiedTreeSearch";
+import { IUnifiedSearchConfig } from "../types/UnifiedSearchTypes";
+
+/**
+ * Example usage of the unified tree search hook
+ * This demonstrates how to integrate the unified search into a tree view component
+ */
+export function TreeViewWithUnifiedSearch(props: any): ReactElement {
+    // Assume these come from your existing tree view implementation
+    const { nodes, expandedNodes, loadedNodes, datasource, nodeIdAttribute, searchAttributes } = props;
+
+    // Configure unified search
+    const searchConfig: IUnifiedSearchConfig = useMemo(
+        () => ({
+            // Data source configuration
+            datasource,
+            nodeIdAttribute,
+            searchAttributes,
+
+            // Search modes - "auto" lets the system choose the best mode
+            mode: "auto",
+            enabledModes: ["cache", "session", "client", "datasource", "server"],
+
+            // Feature flags
+            enableCache: true,
+            enableWebWorker: true,
+            enableServerSearch: !!props.serverSearchEndpoint,
+            enableOfflineMode: true,
+
+            // Performance tuning
+            webWorkerThreshold: 100, // Use web worker for >100 nodes
+            cacheSize: 100, // Cache up to 100 searches
+            cacheTTL: 300000, // 5 minute cache TTL
+            searchDebounce: 300, // 300ms debounce
+            minSearchLength: 2, // Minimum 2 characters
+            maxResultsPerAdapter: 1000, // Limit results per adapter
+
+            // Server configuration (if available)
+            serverEndpoint: props.serverSearchEndpoint || "/rest/treeview/search/v1",
+            serverTimeout: 5000,
+
+            // UI configuration
+            showSearchSource: true, // Show which adapter found results
+            highlightMatches: true, // Highlight matching text
+            expandAncestors: true, // Expand parent nodes to show results
+            resultsPerPage: 50,
+
+            // Callbacks for monitoring
+            onSearchStart: mode => {
+                console.debug(`Starting ${mode} search`);
+            },
+            onSearchComplete: (mode, response) => {
+                console.debug(`${mode} search completed:`, {
+                    results: response.results.length,
+                    total: response.total,
+                    time: response.executionTime
+                });
+            },
+            onSearchError: error => {
+                console.warn(`Search error in ${error.adapter}:`, error.message);
+            },
+            onModeSwitch: (from, to, reason) => {
+                console.debug(`Switching from ${from} to ${to}: ${reason}`);
+            }
+        }),
+        [datasource, nodeIdAttribute, searchAttributes, props.serverSearchEndpoint]
+    );
+
+    // Use the unified search hook
+    const {
+        search,
+        cancelSearch,
+        clearCache,
+        searchQuery,
+        isSearching,
+        searchResults,
+        totalResults,
+        hasMore,
+        currentMode,
+        availableModes,
+        modeStats,
+        errors,
+        lastError,
+        currentPage,
+        setPage,
+        pageSize,
+        lastSearchTime,
+        isOffline,
+        forceMode,
+        getAdapterInfo
+    } = useUnifiedTreeSearch(searchConfig, nodes, expandedNodes, loadedNodes);
+
+    // Example search UI
+    return (
+        <div className="tree-view-container">
+            {/* Search Input */}
+            <div className="search-container">
+                <input
+                    type="text"
+                    placeholder="Search tree..."
+                    value={searchQuery}
+                    onChange={e => search(e.target.value)}
+                    className="search-input"
+                />
+
+                {isSearching && <span className="search-spinner">🔍</span>}
+
+                {searchQuery && (
+                    <button
+                        onClick={() => {
+                            cancelSearch();
+                            search("");
+                        }}
+                    >
+                        Clear
+                    </button>
+                )}
+            </div>
+
+            {/* Search Status */}
+            {searchQuery && (
+                <div className="search-status">
+                    {isSearching ? (
+                        <span>Searching...</span>
+                    ) : (
+                        <span>
+                            Found {totalResults} results
+                            {currentMode && ` (via ${currentMode})`}
+                            {lastSearchTime > 0 && ` in ${lastSearchTime}ms`}
+                        </span>
+                    )}
+
+                    {isOffline && <span className="offline-badge">Offline</span>}
+                </div>
+            )}
+
+            {/* Mode Selector (Advanced) */}
+            <div className="search-modes">
+                <label>Search Mode:</label>
+                <select
+                    value={currentMode || "auto"}
+                    onChange={e => {
+                        if (e.target.value !== "auto") {
+                            forceMode(e.target.value as any);
+                        }
+                    }}
+                >
+                    <option value="auto">Auto</option>
+                    {availableModes.map(mode => (
+                        <option key={mode} value={mode}>
+                            {mode} ({getAdapterInfo(mode)?.name})
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Error Display */}
+            {lastError && (
+                <div className="search-error">
+                    Error: {lastError.message} ({lastError.adapter})
+                    {lastError.recoverable && " - Trying next adapter..."}
+                </div>
+            )}
+
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+                <div className="search-results">
+                    <h4>Search Results:</h4>
+                    {searchResults.map(result => (
+                        <div key={result.nodeId} className="search-result">
+                            <div className="result-node">
+                                {result.node?.label || result.nodeId}
+                                {result.source && <span className="result-source">({result.source})</span>}
+                            </div>
+                            {result.matches.map((match, idx) => (
+                                <div key={idx} className="result-match">
+                                    {match.attribute}: {highlightSearchText(match.value, match.highlights || [])}
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+
+                    {/* Pagination */}
+                    {hasMore && (
+                        <div className="search-pagination">
+                            <button onClick={() => setPage(currentPage + 1)} disabled={isSearching}>
+                                Load More
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Debug Information (Development Only) */}
+            {process.env.NODE_ENV === "development" && (
+                <div className="search-debug">
+                    <h4>Search Debug Info:</h4>
+                    <pre>
+                        {JSON.stringify(
+                            {
+                                availableModes,
+                                modeStats: Object.fromEntries(modeStats),
+                                errors: errors.map(e => ({
+                                    adapter: e.adapter,
+                                    message: e.message
+                                }))
+                            },
+                            null,
+                            2
+                        )}
+                    </pre>
+                </div>
+            )}
+
+            {/* Tree View */}
+            <div className="tree-content">
+                {/* Your existing tree rendering logic here */}
+                {/* Highlight nodes that are in searchResults */}
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Helper function to highlight search matches
+ */
+function highlightSearchText(text: string, highlights: Array<{ start: number; end: number }>): ReactElement {
+    if (!highlights.length) {
+        return <createElement.Fragment>{text}</createElement.Fragment>;
+    }
+
+    // Sort highlights by start position
+    const sortedHighlights = [...highlights].sort((a, b) => a.start - b.start);
+
+    const parts: ReactElement[] = [];
+    let lastEnd = 0;
+
+    sortedHighlights.forEach((highlight, index) => {
+        // Add text before highlight
+        if (highlight.start > lastEnd) {
+            parts.push(<span key={`text-${index}`}>{text.substring(lastEnd, highlight.start)}</span>);
+        }
+
+        // Add highlighted text
+        parts.push(<mark key={`highlight-${index}`}>{text.substring(highlight.start, highlight.end)}</mark>);
+
+        lastEnd = highlight.end;
+    });
+
+    // Add remaining text
+    if (lastEnd < text.length) {
+        parts.push(<span key="text-end">{text.substring(lastEnd)}</span>);
+    }
+
+    return <createElement.Fragment>{parts}</createElement.Fragment>;
+}
+
+/**
+ * Example of programmatic search control
+ */
+export function useSearchControls(searchHook: ReturnType<typeof useUnifiedTreeSearch>) {
+    const { search, forceMode, clearCache, getAdapterInfo } = searchHook;
+
+    // Example: Search with specific options
+    const searchWithOptions = (query: string) => {
+        search(query, {
+            fuzzySearch: true,
+            includeAncestors: true,
+            caseSensitive: false
+        });
+    };
+
+    // Example: Force server search for export
+    const exportSearchResults = async (query: string) => {
+        forceMode("server");
+        search(query, {
+            pageSize: 1000 // Get more results for export
+        });
+    };
+
+    // Example: Refresh search (clear cache and re-search)
+    const refreshSearch = (query: string) => {
+        clearCache();
+        search(query);
+    };
+
+    // Example: Get search capabilities
+    const getSearchCapabilities = () => {
+        const capabilities = {
+            supportsOffline: !!getAdapterInfo("client")?.isAvailable(),
+            supportsFuzzy: !!getAdapterInfo("client")?.supports("fuzzySearch" as any),
+            supportsServer: !!getAdapterInfo("server")?.isAvailable()
+        };
+        return capabilities;
+    };
+
+    return {
+        searchWithOptions,
+        exportSearchResults,
+        refreshSearch,
+        getSearchCapabilities
+    };
+}

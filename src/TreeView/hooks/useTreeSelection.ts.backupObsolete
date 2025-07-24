@@ -1,0 +1,277 @@
+import { useCallback, useEffect, useState, MouseEvent } from "react";
+import { TreeNode, TreeSelectionHookProps } from "../types/TreeTypes";
+import { setEditableValue } from "../utils/mendixHelpers";
+
+export function useTreeSelection(props: TreeSelectionHookProps) {
+    const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set());
+    const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
+    const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
+
+    // Update selection output
+    useEffect(() => {
+        if (!props.selectionOutputAttribute) {
+            return;
+        }
+
+        // Clear selection output when no nodes selected
+        if (selectedNodes.size === 0) {
+            setEditableValue(props.selectionOutputAttribute, "");
+            return;
+        }
+
+        let output = "";
+
+        switch (props.selectionOutputType) {
+            case "guids":
+                output = Array.from(selectedNodes)
+                    .map(id => {
+                        const node = props.nodeMap.get(id);
+                        return node ? node.objectItem.id : null;
+                    })
+                    .filter(Boolean)
+                    .join(",");
+                break;
+
+            case "attributes":
+                output = Array.from(selectedNodes).join(",");
+                break;
+
+            case "structureIds":
+                output = Array.from(selectedNodes)
+                    .map(id => {
+                        const node = props.nodeMap.get(id);
+                        return node?.structureId || "";
+                    })
+                    .filter(Boolean)
+                    .join(",");
+                break;
+        }
+
+        // Check for Mendix string attribute limit and warn if exceeded
+        const MAX_ATTRIBUTE_LENGTH = 200;
+        if (output.length > MAX_ATTRIBUTE_LENGTH) {
+            console.warn(
+                `TreeView selection output exceeds ${MAX_ATTRIBUTE_LENGTH} character limit. ` +
+                    `Current length: ${output.length}. Consider using branch-based selection model ` +
+                    `or server-side storage for large selections.`
+            );
+
+            // Truncate to fit within limit, keeping complete IDs
+            const ids = output.split(",");
+            let truncatedOutput = "";
+            for (const id of ids) {
+                if (truncatedOutput.length + id.length + 1 <= MAX_ATTRIBUTE_LENGTH) {
+                    truncatedOutput += (truncatedOutput ? "," : "") + id;
+                } else {
+                    break;
+                }
+            }
+            output = truncatedOutput;
+        }
+
+        setEditableValue(props.selectionOutputAttribute, output);
+
+        // Execute selection change action
+        if (props.onSelectionChange && props.onSelectionChange.canExecute) {
+            props.onSelectionChange.execute();
+        }
+    }, [selectedNodes, props]);
+
+    // Toggle selection
+    const toggleSelection = useCallback(
+        (nodeId: string) => {
+            if (props.selectionMode === "none") {
+                return;
+            }
+
+            setSelectedNodes(prev => {
+                const newSelection = new Set(prev);
+
+                if (props.selectionMode === "single") {
+                    // Single selection mode
+                    newSelection.clear();
+                    newSelection.add(nodeId);
+                } else {
+                    // Multiple selection mode
+                    if (newSelection.has(nodeId)) {
+                        newSelection.delete(nodeId);
+                    } else {
+                        newSelection.add(nodeId);
+                    }
+                }
+
+                return newSelection;
+            });
+
+            setLastSelectedId(nodeId);
+        },
+        [props.selectionMode]
+    );
+
+    // Select single node
+    const selectNode = useCallback(
+        (nodeId: string) => {
+            if (props.selectionMode === "none") {
+                return;
+            }
+
+            setSelectedNodes(new Set([nodeId]));
+            setLastSelectedId(nodeId);
+            setFocusedNodeId(nodeId);
+        },
+        [props.selectionMode]
+    );
+
+    // Clear selection
+    const clearSelection = useCallback(() => {
+        setSelectedNodes(new Set());
+        setLastSelectedId(null);
+    }, []);
+
+    // Select all nodes
+    const selectAll = useCallback(() => {
+        if (props.selectionMode !== "multi") {
+            return;
+        }
+
+        const allNodeIds = props.nodes.map(node => node.id);
+        setSelectedNodes(new Set(allNodeIds));
+    }, [props.selectionMode, props.nodes]);
+
+    // Select range of nodes
+    const selectRange = useCallback(
+        (fromId: string, toId: string) => {
+            if (props.selectionMode !== "multi") {
+                return;
+            }
+
+            // Get flat list of visible nodes
+            const visibleNodes: TreeNode[] = [];
+
+            const collectVisible = (nodes: TreeNode[]) => {
+                nodes.forEach(node => {
+                    visibleNodes.push(node);
+                    if (node.children.length > 0) {
+                        collectVisible(node.children); // TODO FIX: Only collect visible nodes (respect isExpanded state)
+                    }
+                });
+            };
+
+            // Get root nodes
+            const rootNodes = props.nodes.filter(node => !node.parentId);
+            collectVisible(rootNodes);
+
+            // Find indices
+            const fromIndex = visibleNodes.findIndex(n => n.id === fromId);
+            const toIndex = visibleNodes.findIndex(n => n.id === toId);
+
+            if (fromIndex === -1 || toIndex === -1) {
+                return;
+            }
+
+            // Select range
+            const startIndex = Math.min(fromIndex, toIndex);
+            const endIndex = Math.max(fromIndex, toIndex);
+
+            const rangeNodes = visibleNodes.slice(startIndex, endIndex + 1).map(n => n.id);
+
+            setSelectedNodes(prev => {
+                const newSelection = new Set(prev);
+                rangeNodes.forEach(id => newSelection.add(id));
+                return newSelection;
+            });
+        },
+        [props]
+    );
+
+    // Handle multi-select with modifiers
+    const handleNodeSelection = useCallback(
+        (nodeId: string, event: MouseEvent<Element>) => {
+            if (props.selectionMode === "none") {
+                return;
+            }
+
+            const node = props.nodeMap.get(nodeId);
+            if (!node) {
+                return;
+            }
+
+            if (props.selectionMode === "single") {
+                selectNode(nodeId);
+                return;
+            }
+
+            // Multi/branch/path selection modes
+            const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+            const isShift = event.shiftKey;
+
+            if (isCtrlOrCmd) {
+                // Toggle selection
+                toggleSelection(nodeId);
+            } else if (isShift && lastSelectedId) {
+                // Range selection
+                selectRange(lastSelectedId, nodeId);
+            } else {
+                // Single selection
+                selectNode(nodeId);
+            }
+        },
+        [props, lastSelectedId, selectNode, toggleSelection, selectRange]
+    );
+
+    // Select nodes by predicate
+    const selectByPredicate = useCallback(
+        (predicate: (node: TreeNode) => boolean) => {
+            if (props.selectionMode !== "multi") {
+                return;
+            }
+
+            const matchingIds = props.nodes.filter(predicate).map(node => node.id);
+            // TODO ADD: Support max selection limit configuration
+            // TODO ADD: Implement performance optimization for large node sets
+
+            setSelectedNodes(new Set(matchingIds));
+        },
+        [props]
+    );
+
+    // Invert selection
+    const invertSelection = useCallback(() => {
+        if (props.selectionMode !== "multi") {
+            return;
+        }
+
+        const allIds = new Set(props.nodes.map(n => n.id));
+        const inverted = new Set<string>();
+
+        allIds.forEach(id => {
+            if (!selectedNodes.has(id)) {
+                inverted.add(id);
+            }
+        });
+
+        setSelectedNodes(inverted);
+    }, [props, selectedNodes]);
+
+    // Get selected items
+    const getSelectedItems = useCallback(() => {
+        return Array.from(selectedNodes)
+            .map(id => props.nodeMap.get(id))
+            .filter((node): node is TreeNode => node !== undefined);
+    }, [selectedNodes, props.nodeMap]);
+
+    return {
+        selectedNodes,
+        focusedNodeId,
+        setFocusedNodeId,
+        toggleSelection,
+        selectNode,
+        clearSelection,
+        selectAll,
+        selectRange,
+        handleNodeSelection,
+        selectByPredicate,
+        invertSelection,
+        getSelectedItems
+    };
+}

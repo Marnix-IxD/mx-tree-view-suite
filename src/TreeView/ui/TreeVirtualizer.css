@@ -1,0 +1,114 @@
+/* TreeVirtualizer.css - Advanced virtual scrolling styles */
+
+/* Virtual container */
+.mx-tree__virtual-container-enhanced {
+    position: relative;
+    overflow: auto;
+    will-change: scroll-position;
+}
+
+/* Virtual content spacer */
+.mx-tree__virtual-content {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Virtual item wrapper */
+.mx-tree__virtual-item {
+    will-change: transform;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Skeleton placeholder styles */
+.mx-tree__virtual-item-skeleton {
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+}
+
+.mx-tree__skeleton-pulse {
+    background: linear-gradient(90deg, 
+        var(--mx-tree-skeleton-base, #f3f4f6) 0%, 
+        var(--mx-tree-skeleton-highlight, #e5e7eb) 50%, 
+        var(--mx-tree-skeleton-base, #f3f4f6) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    height: 20px;
+    width: 60%;
+    border-radius: 4px;
+}
+
+@keyframes skeleton-pulse {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Smooth transition when item loads */
+.mx-tree__virtual-item--loaded {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0.7;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Performance optimizations */
+.mx-tree__virtual-container--scrolling .mx-tree__virtual-item {
+    transition: none;
+    will-change: auto;
+}
+
+.mx-tree__virtual-container--fast-scroll .mx-tree__virtual-item {
+    /* Reduce quality during fast scroll for performance */
+    image-rendering: optimizeSpeed;
+    backface-visibility: hidden;
+}
+
+/* Debug overlay */
+.mx-tree__virtual-debug {
+    font-family: monospace;
+    font-size: 10px;
+    line-height: 1.2;
+    pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .mx-tree__virtual-item {
+        /* Reduce transitions on mobile for better performance */
+        transition-duration: 0.15s;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .mx-tree__skeleton-pulse {
+        background: var(--mx-tree-skeleton-high-contrast, #d1d5db);
+        animation: none;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .mx-tree__skeleton-pulse {
+        animation: none;
+    }
+    
+    .mx-tree__virtual-item--loaded {
+        animation: none;
+    }
+    
+    .mx-tree__virtual-item {
+        transition: none;
+    }
+}

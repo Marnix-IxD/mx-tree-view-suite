@@ -1,0 +1,228 @@
+.tree-context-manager {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.tree-context-manager-container {
+    display: flex;
+    flex: 1;
+    gap: 0;
+    align-items: stretch;
+}
+
+/* Vertical layout */
+.tree-context-manager-container.layout-vertical {
+    flex-direction: column;
+}
+
+/* Tree panels */
+.tree-panel {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    min-width: 200px;
+    background-color: var(--bg-color-secondary, #ffffff);
+    border: 1px solid var(--border-color-default, #ced0d3);
+    border-radius: 4px;
+}
+
+.tree-panel-a {
+    order: 1;
+}
+
+.tree-panel-b {
+    order: 3;
+}
+
+/* Placeholder for development */
+.tree-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    font-size: 18px;
+}
+
+/* Action panel */
+.action-panel {
+    order: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+    background-color: var(--bg-color-primary, #f5f5f5);
+    position: relative;
+}
+
+.layout-vertical .action-panel {
+    flex-direction: row;
+    width: 100% !important;
+    height: 40px;
+    padding: 4px 8px;
+}
+
+/* Transfer buttons */
+.transfer-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: auto;
+}
+
+.layout-vertical .transfer-buttons {
+    flex-direction: row;
+    margin-bottom: 0;
+    margin-right: auto;
+}
+
+.transfer-button {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border-color-default, #ced0d3);
+    border-radius: 4px;
+    background-color: var(--bg-color-secondary, #ffffff);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.transfer-button:hover {
+    background-color: var(--bg-color-secondary-hover, #f0f0f0);
+    border-color: var(--border-color-hover, #b0b0b0);
+}
+
+.transfer-button:active,
+.transfer-button.active {
+    background-color: var(--brand-primary, #264ae5);
+    color: white;
+    border-color: var(--brand-primary, #264ae5);
+}
+
+.transfer-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.transfer-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Confirmation buttons */
+.confirmation-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    margin-top: 16px;
+}
+
+.layout-vertical .confirmation-buttons {
+    flex-direction: row;
+    width: auto;
+    margin-top: 0;
+    margin-left: 16px;
+}
+
+.confirmation-button {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color-default, #ced0d3);
+    border-radius: 4px;
+    background-color: var(--bg-color-secondary, #ffffff);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.confirmation-button.apply {
+    background-color: var(--brand-success, #3cb33d);
+    color: white;
+    border-color: var(--brand-success, #3cb33d);
+}
+
+.confirmation-button.apply:hover {
+    background-color: var(--brand-success-hover, #2e8b2f);
+}
+
+.confirmation-button.cancel {
+    background-color: var(--brand-danger, #e33f49);
+    color: white;
+    border-color: var(--brand-danger, #e33f49);
+}
+
+.confirmation-button.cancel:hover {
+    background-color: var(--brand-danger-hover, #c4313a);
+}
+
+/* Transfer states */
+.tree-context-manager.transfer-active .tree-panel-a .tree-item.selected {
+    opacity: 0.5;
+}
+
+.tree-context-manager.transfer-active .tree-panel-b .preview-drop-zone {
+    background-color: var(--brand-primary-lighter, #e6ebff);
+    border: 2px dashed var(--brand-primary, #264ae5);
+    min-height: 32px;
+    margin: 4px 0;
+}
+
+/* Drag preview */
+.drag-preview {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    background-color: white;
+    border: 1px solid var(--border-color-default, #ced0d3);
+    border-radius: 4px;
+    padding: 4px 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.drag-preview-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: var(--brand-primary, #264ae5);
+    color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+/* Loading state */
+.tree-context-manager.loading::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Debug mode */
+.tree-context-manager.debug-mode .debug-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px;
+    font-size: 11px;
+    font-family: monospace;
+}

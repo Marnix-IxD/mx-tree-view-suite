@@ -1,0 +1,130 @@
+/* LoadingIndicator.css - Loading state for drag drop operations */
+
+.tree-loading-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 16px;
+    opacity: 0;
+    transition: opacity 300ms ease;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.tree-loading-indicator--visible {
+    opacity: 1;
+}
+
+.tree-loading-spinner {
+    display: flex;
+    gap: 4px;
+}
+
+.tree-loading-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1890ff;
+    animation: bounce 1.4s infinite ease-in-out;
+}
+
+.tree-loading-dot--1 {
+    animation-delay: -0.32s;
+}
+
+.tree-loading-dot--2 {
+    animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.tree-loading-message {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+/* Success state */
+.tree-loading-indicator--success {
+    background: rgba(82, 196, 26, 0.15);
+    animation: pulseSuccess 600ms ease-out;
+}
+
+@keyframes pulseSuccess {
+    0% {
+        background: rgba(82, 196, 26, 0.15);
+        transform: scale(1);
+    }
+    50% {
+        background: rgba(82, 196, 26, 0.3);
+        transform: scale(1.02);
+    }
+    100% {
+        background: rgba(82, 196, 26, 0.15);
+        transform: scale(1);
+    }
+}
+
+.tree-loading-indicator--success .tree-loading-message {
+    color: #52c41a;
+    font-weight: 600;
+}
+
+/* Error state */
+.tree-loading-indicator--error {
+    background: rgba(255, 77, 79, 0.15);
+    animation: shakeError 400ms ease-out;
+}
+
+@keyframes shakeError {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-4px);
+    }
+    75% {
+        transform: translateX(4px);
+    }
+}
+
+.tree-loading-indicator--error .tree-loading-message {
+    color: #ff4d4f;
+    font-weight: 600;
+}
+
+/* Position loading indicator over tree nodes */
+.tree-node {
+    position: relative;
+}
+
+.tree-node[data-loading="true"] .tree-loading-indicator {
+    display: flex;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .tree-loading-indicator {
+        background: rgba(0, 0, 0, 0.8);
+    }
+    
+    .tree-loading-message {
+        color: #aaa;
+    }
+}

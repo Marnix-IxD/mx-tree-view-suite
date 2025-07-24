@@ -1,0 +1,289 @@
+/* Tree Loading Component Styles */
+
+/* Base loading component */
+.tree-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    background-color: var(--tree-loading-bg, rgba(255, 255, 255, 0.95));
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    min-width: 200px;
+}
+
+.tree-loading__content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Default spinner */
+.tree-loading__spinner {
+    width: 24px;
+    height: 24px;
+    color: var(--tree-loading-spinner-color, #0066cc);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.tree-loading__spinner-svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Text content */
+.tree-loading__text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tree-loading__message {
+    font-size: 14px;
+    color: var(--tree-loading-text-color, #333);
+}
+
+.tree-loading__progress {
+    font-size: 12px;
+    color: var(--tree-loading-progress-color, #666);
+}
+
+/* Progress bar */
+.tree-loading__progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: var(--tree-loading-progress-bg, #e0e0e0);
+    border-radius: 0 0 4px 4px;
+    overflow: hidden;
+}
+
+.tree-loading__progress-fill {
+    height: 100%;
+    background-color: var(--tree-loading-progress-fill, #0066cc);
+    transition: width 0.3s ease;
+}
+
+/* Type-specific styles */
+.tree-loading--search {
+    position: relative;
+    padding: 4px 8px;
+    min-width: 120px;
+}
+
+/* Full tree building might need more space 
+.tree-loading--tree {
+    
+}*/
+
+/* Structure updates are usually quick 
+.tree-loading--structureUpdate {
+}*/
+
+/* Search loading indicator (inline) */
+.tree-search-loading {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+}
+
+.tree-search-loading__spinner {
+    display: flex;
+    gap: 3px;
+}
+
+.tree-search-loading__dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--tree-search-loading-dot-color, #666);
+    animation: tree-search-pulse 1.4s ease-in-out infinite;
+}
+
+.tree-search-loading__dot--1 {
+    animation-delay: -0.32s;
+}
+
+.tree-search-loading__dot--2 {
+    animation-delay: -0.16s;
+}
+
+@keyframes tree-search-pulse {
+    0%, 80%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Tree building overlay */
+.tree-building-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--tree-building-overlay-bg, rgba(255, 255, 255, 0.9));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.tree-building-overlay__content {
+    text-align: center;
+    padding: 32px;
+}
+
+.tree-building-overlay__icon {
+    margin-bottom: 16px;
+    color: var(--tree-building-icon-color, #0066cc);
+}
+
+.tree-building-overlay__svg {
+    width: 48px;
+    height: 48px;
+}
+
+/* Animated tree branches */
+.tree-building-overlay__branch {
+    opacity: 0;
+    animation: tree-branch-grow 0.5s ease-out forwards;
+}
+
+.tree-building-overlay__branch--1 {
+    animation-delay: 0.2s;
+}
+
+.tree-building-overlay__branch--2 {
+    animation-delay: 0.4s;
+}
+
+.tree-building-overlay__branch--3 {
+    animation-delay: 0.6s;
+}
+
+@keyframes tree-branch-grow {
+    from {
+        opacity: 0;
+        stroke-dasharray: 0 20;
+    }
+    to {
+        opacity: 1;
+        stroke-dasharray: 20 20;
+    }
+}
+
+/* Animated nodes */
+.tree-building-overlay__node {
+    opacity: 0;
+    transform: scale(0);
+    animation: tree-node-appear 0.3s ease-out forwards;
+}
+
+.tree-building-overlay__node--1 {
+    animation-delay: 0.3s;
+}
+
+.tree-building-overlay__node--2 {
+    animation-delay: 0.5s;
+}
+
+.tree-building-overlay__node--3 {
+    animation-delay: 0.7s;
+}
+
+.tree-building-overlay__node--4 {
+    animation-delay: 0.9s;
+}
+
+@keyframes tree-node-appear {
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.tree-building-overlay__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--tree-building-title-color, #333);
+    margin: 0 0 8px 0;
+}
+
+.tree-building-overlay__subtitle {
+    font-size: 14px;
+    color: var(--tree-building-subtitle-color, #666);
+    margin: 0 0 24px 0;
+}
+
+.tree-building-overlay__loader {
+    width: 200px;
+    height: 4px;
+    background-color: var(--tree-building-loader-bg, #e0e0e0);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+.tree-building-overlay__loader-bar {
+    height: 100%;
+    width: 30%;
+    background-color: var(--tree-building-loader-fill, #0066cc);
+    animation: tree-loader-slide 1.5s ease-in-out infinite;
+}
+
+@keyframes tree-loader-slide {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(400%);
+    }
+}
+
+/* Custom loader examples that users can implement */
+
+/* Example 1: Pulsing rings 
+User can override with custom animation
+.tree-loading--custom-pulse .tree-loading__spinner {     
+}*/
+
+/* Example 2: Morphing shapes */
+/* User can create shape morphing animations
+.tree-loading--custom-morph .tree-loading__spinner {      
+}*/
+
+/* Example 3: Particle effects
+User can add particle-like loading effects 
+.tree-loading--custom-particles .tree-loading__spinner {
+}*/
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .tree-loading__spinner,
+    .tree-search-loading__dot,
+    .tree-building-overlay__branch,
+    .tree-building-overlay__node,
+    .tree-building-overlay__loader-bar {
+        animation: none;
+    }
+    
+    .tree-loading__progress-fill {
+        transition: none;
+    }
+}

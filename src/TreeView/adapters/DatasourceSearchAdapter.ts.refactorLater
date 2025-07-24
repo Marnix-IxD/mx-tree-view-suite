@@ -1,0 +1,339 @@
+import { BaseSearchAdapter } from "./BaseSearchAdapter";
+import {
+    SearchMode,
+    SearchFeature,
+    ISearchOptions,
+    ISearchResponse,
+    IUnifiedSearchResult,
+    IPerformanceEstimate,
+    ISearchContext,
+    ISearchMatch
+} from "../types/UnifiedSearchTypes";
+import { ListValue, ListAttributeValue, ObjectItem } from "mendix";
+import { Big } from "big.js";
+import { buildSearchFilter } from "../utils/datasourceFilterBuilder";
+import { FilterCondition } from "mendix/filters";
+
+/**
+ * Search adapter using Mendix datasource.setFilter()
+ * Native Mendix approach, best for small to medium datasets
+ */
+export class DatasourceSearchAdapter extends BaseSearchAdapter {
+    readonly mode: SearchMode = "datasource";
+    readonly name = "Datasource Search";
+    readonly priority = 60; // Medium priority
+
+    private context: ISearchContext;
+    private datasource: ListValue;
+    private nodeIdAttribute: ListAttributeValue<string | Big>;
+    private searchAttributes: Array<ListAttributeValue<string | Big | boolean | Date>>;
+    private previousFilter: FilterCondition | undefined;
+
+    constructor(
+        context: ISearchContext,
+        datasource: ListValue,
+        nodeIdAttribute: ListAttributeValue<string | Big>,
+        searchAttributes: Array<ListAttributeValue<string | Big | boolean | Date>>
+    ) {
+        super();
+        this.context = context;
+        this.datasource = datasource;
+        this.nodeIdAttribute = nodeIdAttribute;
+        this.searchAttributes = searchAttributes;
+
+        // Datasource search supports these features
+        this.features = new Set([
+            SearchFeature.TypeAwareFiltering,
+            SearchFeature.PartialMatching,
+            SearchFeature.Pagination,
+            SearchFeature.RealTimeUpdates
+        ]);
+    }
+
+    /**
+     * Check if datasource search is available
+     */
+    isAvailable(): boolean {
+        // Check if datasource is available and we have search attributes
+        return this.datasource.status === "available" && this.searchAttributes.length > 0;
+    }
+
+    /**
+     * Estimate performance based on datasource
+     */
+    estimatePerformance(_options: ISearchOptions): IPerformanceEstimate {
+        const factors: string[] = [];
+        let estimatedTime = 100; // Base network time
+
+        // Check if datasource has total count
+        if (this.datasource.totalCount !== undefined) {
+            const totalCount = this.datasource.totalCount;
+            factors.push(`${totalCount} total items`);
+
+            // Estimate based on dataset size
+            if (totalCount > 10000) {
+                estimatedTime = 500;
+                factors.push("Large dataset");
+            } else if (totalCount > 1000) {
+                estimatedTime = 200;
+                factors.push("Medium dataset");
+            }
+        } else {
+            factors.push("Unknown dataset size");
+        }
+
+        // Server-side filtering is generally efficient
+        factors.push("Server-side filtering");
+
+        return {
+            estimatedTime,
+            confidence: 0.7, // Medium confidence
+            factors
+        };
+    }
+
+    /**
+     * Perform datasource search
+     */
+    protected async performSearch(options: ISearchOptions): Promise<ISearchResponse> {
+        const startTime = Date.now();
+
+        // Store previous filter to restore later
+        this.previousFilter = this.datasource.filter;
+
+        // Build search filter
+        const searchFilter = buildSearchFilter(options.query, this.searchAttributes);
+
+        if (!searchFilter) {
+            return {
+                results: [],
+                total: 0,
+                hasMore: false,
+                executionTime: Date.now() - startTime
+            };
+        }
+
+        // Apply filter and wait for datasource to update
+        return new Promise<ISearchResponse>((resolve, reject) => {
+            // Set up timeout
+            const timeoutId = setTimeout(() => {
+                this.cleanup();
+                reject(new Error("Datasource search timeout"));
+            }, 10000); // 10 second timeout
+
+            // Handle abort
+            options.signal?.addEventListener("abort", () => {
+                clearTimeout(timeoutId);
+                this.cleanup();
+                reject(new Error("Search cancelled"));
+            });
+
+            // Apply the filter
+            this.datasource.setFilter(searchFilter);
+
+            // Request total count for better pagination
+            this.datasource.requestTotalCount(true);
+
+            // Exponential backoff configuration
+            const INITIAL_DELAY = 50;  // Start at 50ms
+            const MAX_DELAY = 500;     // Cap at 500ms
+            const BACKOFF_FACTOR = 1.5; // Multiply by 1.5 each time
+            let currentDelay = INITIAL_DELAY;
+
+            // Recursive function to check datasource status with exponential backoff
+            const checkDatasourceStatus = (): void => {
+                if (this.datasource.status === "available") {
+                    clearTimeout(timeoutId);
+
+                    // Process results
+                    const response = this.processResults(options, startTime);
+                    resolve(response);
+                } else if (this.datasource.status === "unavailable") {
+                    clearTimeout(timeoutId);
+                    this.cleanup();
+                    reject(new Error("Datasource unavailable"));
+                } else {
+                    // Status is still loading - schedule next check with backoff
+                    currentDelay = Math.min(currentDelay * BACKOFF_FACTOR, MAX_DELAY);
+                    setTimeout(checkDatasourceStatus, currentDelay);
+                }
+            };
+
+            // Start checking after initial delay
+            setTimeout(checkDatasourceStatus, currentDelay);
+        });
+    }
+
+    /**
+     * Process datasource results
+     */
+    private processResults(options: ISearchOptions, startTime: number): ISearchResponse {
+        const items = this.datasource.items || [];
+        const results: IUnifiedSearchResult[] = [];
+
+        for (const item of items) {
+            const nodeId = this.nodeIdAttribute.get(item).value?.toString() || "";
+            if (!nodeId) {
+                continue;
+            }
+
+            // Find matches in the item
+            const matches = this.findMatches(item, options.query);
+            if (matches.length === 0) {
+                continue;
+            }
+
+            const node = this.context.nodes.get(nodeId);
+
+            results.push({
+                nodeId,
+                node,
+                objectItem: item,
+                matches,
+                ancestors: this.findAncestors(nodeId),
+                score: this.calculateScore(matches, options.query),
+                source: "datasource",
+                structureId: node?.structureId,
+                level: node?.level
+            });
+        }
+
+        // Datasource already handles pagination
+        const page = options.page || 0;
+        const pageSize = options.pageSize || 50;
+
+        // Update datasource limit/offset if needed
+        if (this.datasource.limit !== pageSize || this.datasource.offset !== page * pageSize) {
+            this.datasource.setLimit(pageSize);
+            this.datasource.setOffset(page * pageSize);
+        }
+
+        return {
+            results,
+            total: this.datasource.totalCount || results.length,
+            hasMore: this.datasource.hasMoreItems || false,
+            executionTime: Date.now() - startTime
+        };
+    }
+
+    /**
+     * Find matches in object attributes
+     */
+    private findMatches(item: ObjectItem, query: string): ISearchMatch[] {
+        const matches: ISearchMatch[] = [];
+        const queryLower = query.toLowerCase();
+
+        for (const attr of this.searchAttributes) {
+            const value = attr.get(item).value;
+            if (value === null || value === undefined) {
+                continue;
+            }
+
+            const stringValue = value.toString();
+            const valueLower = stringValue.toLowerCase();
+
+            // Check for match
+            const index = valueLower.indexOf(queryLower);
+            if (index !== -1) {
+                matches.push({
+                    attribute: attr.id,
+                    value: stringValue,
+                    matchedText: stringValue.substring(index, index + query.length),
+                    highlights: [
+                        {
+                            start: index,
+                            end: index + query.length
+                        }
+                    ]
+                });
+            }
+        }
+
+        return matches;
+    }
+
+    /**
+     * Calculate relevance score
+     */
+    private calculateScore(matches: ISearchMatch[], query: string): number {
+        let score = 0;
+        const queryLower = query.toLowerCase();
+
+        for (const match of matches) {
+            const valueLower = match.value.toLowerCase();
+
+            // Exact match
+            if (valueLower === queryLower) {
+                score += 100;
+            }
+            // Starts with query
+            else if (valueLower.startsWith(queryLower)) {
+                score += 80;
+            }
+            // Word boundary match
+            else if (
+                match.highlights?.[0]?.start === 0 ||
+                (match.highlights?.[0]?.start && match.value[match.highlights[0].start - 1] === " ")
+            ) {
+                score += 60;
+            }
+            // Contains match
+            else {
+                score += 40;
+            }
+        }
+
+        return score;
+    }
+
+    /**
+     * Find ancestors for a node
+     */
+    private findAncestors(nodeId: string): string[] {
+        const ancestors: string[] = [];
+        const node = this.context.nodes.get(nodeId);
+
+        if (!node) {
+            return ancestors;
+        }
+
+        let currentNode = node;
+        while (currentNode.parentId) {
+            ancestors.unshift(currentNode.parentId);
+            const parent = this.context.nodes.get(currentNode.parentId);
+            if (!parent) {
+                break;
+            }
+            currentNode = parent;
+        }
+
+        return ancestors;
+    }
+
+    /**
+     * Cancel search and restore previous filter
+     */
+    cancel(): void {
+        super.cancel();
+        this.cleanup();
+    }
+
+    /**
+     * Cleanup after search
+     */
+    private cleanup(): void {
+        // Restore previous filter if set
+        if (this.previousFilter !== undefined) {
+            this.datasource.setFilter(this.previousFilter);
+            this.previousFilter = undefined;
+        }
+
+    }
+
+    /**
+     * Clear any filters
+     */
+    clearSearch(): void {
+        this.datasource.setFilter(undefined);
+    }
+}

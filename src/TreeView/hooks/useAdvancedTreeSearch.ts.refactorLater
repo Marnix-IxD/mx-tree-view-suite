@@ -1,0 +1,333 @@
+// useAdvancedTreeSearch.ts - Advanced search with filterList support and dynamic UI
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FilterListType } from "../../../typings/TreeViewProps";
+import { TreeNode } from "../types/TreeTypes";
+import { ISearchFilter, ISearchRequest, SearchAttributeType } from "../types/SearchTypes";
+import {
+    convertFilterListToSearchFilters
+} from "../utils/filterListAdapter";
+import {
+    buildSmartSearchFilters,
+    buildTypedSearchFilters,
+    getSearchDescription
+} from "../utils/smartSearchFilterBuilder";
+import { useTreeSearch, UseTreeSearchReturn } from "./useTreeSearch";
+import { ListAttributeValue } from "mendix";
+
+export type SearchUIMode = "auto" | "string" | "numeric" | "date" | "boolean" | "enum" | "mixed";
+
+export interface IAdvancedSearchState {
+    // UI State
+    uiMode: SearchUIMode;
+    activeFilter?: ISearchFilter;
+    selectedOperator: string;
+    searchValue: string;
+    searchValue2?: string; // For "between" operator
+    selectedEnumValues: string[];
+    selectedBooleanValue: boolean | null;
+
+    // Search description
+    searchDescription: string;
+}
+
+export interface UseAdvancedTreeSearchReturn extends UseTreeSearchReturn {
+    // Filter configuration
+    searchFilters: ISearchFilter[];
+    hasMultipleTypes: boolean;
+    availableModes: SearchUIMode[];
+
+    // UI State
+    searchState: IAdvancedSearchState;
+    setUIMode: (mode: SearchUIMode) => void;
+    setSelectedOperator: (operator: string) => void;
+    setSearchValue: (value: string) => void;
+    setSearchValue2: (value: string) => void;
+    setSelectedEnumValues: (values: string[]) => void;
+    setSelectedBooleanValue: (value: boolean | null) => void;
+
+    // Actions
+    executeSearch: () => void;
+    executeAdvancedSearch: (request: ISearchRequest) => Promise<void>;
+}
+
+interface UseAdvancedTreeSearchProps {
+    // Data
+    nodes: TreeNode[];
+    nodeMap: Map<string, TreeNode>;
+    datasource?: any;
+    nodeIdAttribute: ListAttributeValue<string>; // Attribute that contains the node ID
+
+    // Filter configuration
+    filterList: FilterListType[]; // Required - no legacy support
+
+    // Search configuration
+    searchEndpoint?: string;
+    searchDebounce?: number;
+    searchMinCharacters?: number;
+    searchScalingDelay?: boolean;
+    enabled?: boolean;
+
+    // Tree interaction
+    expandedNodes: Set<string>;
+    toggleExpanded: (nodeId: string) => void;
+
+    // Entity info
+    entityName?: string;
+
+    // API functions
+    sendSearch?: (request: ISearchRequest) => Promise<any>;
+}
+
+export function useAdvancedTreeSearch(props: UseAdvancedTreeSearchProps): UseAdvancedTreeSearchReturn {
+    // Build search filters from filterList
+    const searchFilters = useMemo(() => {
+        if (!props.filterList || props.filterList.length === 0) {
+            return [];
+        }
+        return convertFilterListToSearchFilters(props.filterList);
+    }, [props.filterList]);
+
+    // Analyze attribute types
+    const { hasMultipleTypes, availableModes, primaryMode } = useMemo(() => {
+        const typeMap = new Map<SearchAttributeType, number>();
+
+        searchFilters.forEach((filter: ISearchFilter) => {
+            const count = typeMap.get(filter.attributeType) || 0;
+            typeMap.set(filter.attributeType, count + 1);
+        });
+
+        const types = Array.from(typeMap.keys());
+        const modes: SearchUIMode[] = ["auto"]; // Always have auto mode
+
+        // Map attribute types to UI modes
+        if (typeMap.has("String")) {
+            modes.push("string");
+        }
+        if (typeMap.has("Integer") || typeMap.has("Long") || typeMap.has("Decimal")) {
+            modes.push("numeric");
+        }
+        if (typeMap.has("DateTime")) {
+            modes.push("date");
+        }
+        if (typeMap.has("Boolean")) {
+            modes.push("boolean");
+        }
+        if (typeMap.has("Enum")) {
+            modes.push("enum");
+        }
+
+        if (types.length > 1) {
+            modes.push("mixed");
+        }
+
+        // Determine primary mode (most common type)
+        let primaryMode: SearchUIMode = "auto";
+        let maxCount = 0;
+        typeMap.forEach((count, type) => {
+            if (count > maxCount) {
+                maxCount = count;
+                if (type === "String") {
+                    primaryMode = "string";
+                } else if (["Integer", "Long", "Decimal"].includes(type)) {
+                    primaryMode = "numeric";
+                } else if (type === "DateTime") {
+                    primaryMode = "date";
+                } else if (type === "Boolean") {
+                    primaryMode = "boolean";
+                } else if (type === "Enum") {
+                    primaryMode = "enum";
+                }
+            }
+        });
+
+        return {
+            hasMultipleTypes: types.length > 1,
+            availableModes: modes,
+            primaryMode
+        };
+    }, [searchFilters]);
+
+    // Search UI state
+    const [searchState, setSearchState] = useState<IAdvancedSearchState>({
+        uiMode: primaryMode,
+        selectedOperator: "contains",
+        searchValue: "",
+        selectedEnumValues: [],
+        selectedBooleanValue: null,
+        searchDescription: ""
+    });
+
+    // Use the existing tree search hook for core functionality
+    const baseSearchHook = useTreeSearch({
+        nodes: props.nodes,
+        nodeMap: props.nodeMap,
+        searchMode: props.searchEndpoint ? "server" : "client",
+        searchDebounce: props.searchDebounce || 300,
+        expandedNodes: props.expandedNodes,
+        toggleExpanded: props.toggleExpanded,
+        searchMinCharacters: props.searchMinCharacters,
+        searchScalingDelay: props.searchScalingDelay,
+        enabled: props.enabled,
+        datasource: props.datasource,
+        nodeIdAttribute: props.nodeIdAttribute
+    });
+
+    // UI state setters
+    const setUIMode = useCallback((mode: SearchUIMode) => {
+        setSearchState(prev => ({
+            ...prev,
+            uiMode: mode,
+            // Reset operator when changing mode
+            selectedOperator:
+                mode === "string" ? "contains" : mode === "numeric" ? "equals" : mode === "date" ? "equals" : "equals"
+        }));
+    }, []);
+
+    const setSelectedOperator = useCallback((operator: string) => {
+        setSearchState(prev => ({ ...prev, selectedOperator: operator }));
+    }, []);
+
+    const setSearchValue = useCallback(
+        (value: string) => {
+            setSearchState(prev => ({ ...prev, searchValue: value }));
+
+            // In auto mode, also update the base search
+            if (searchState.uiMode === "auto") {
+                baseSearchHook.setSearchQuery(value);
+            }
+        },
+        [searchState.uiMode, baseSearchHook]
+    );
+
+    const setSearchValue2 = useCallback((value: string) => {
+        setSearchState(prev => ({ ...prev, searchValue2: value }));
+    }, []);
+
+    const setSelectedEnumValues = useCallback((values: string[]) => {
+        setSearchState(prev => ({ ...prev, selectedEnumValues: values }));
+    }, []);
+
+    const setSelectedBooleanValue = useCallback((value: boolean | null) => {
+        setSearchState(prev => ({ ...prev, selectedBooleanValue: value }));
+    }, []);
+
+    // Execute advanced search
+    const executeAdvancedSearch = useCallback(
+        async (request: ISearchRequest) => {
+            if (!props.sendSearch || !props.searchEndpoint) {
+                console.warn("No search endpoint configured for server search");
+                return;
+            }
+
+            try {
+                const result = await props.sendSearch(request);
+
+                // Process search results
+                if (result && result.results) {
+                    // Convert server response to search results format
+                    // This would need to be implemented based on your server response structure
+                    console.debug("Search results:", result);
+                }
+            } catch (error) {
+                console.error("Advanced search error:", error);
+            }
+        },
+        [props.sendSearch, props.searchEndpoint]
+    );
+
+    // Execute search based on current UI state
+    const executeSearch = useCallback(() => {
+        const { uiMode, searchValue, selectedOperator } = searchState;
+
+        if (!searchValue && uiMode !== "boolean") {
+            baseSearchHook.clearSearch();
+            return;
+        }
+
+        // Build search request based on mode
+        let searchRequest: ISearchRequest | null = null;
+
+        if (uiMode === "auto") {
+            // Smart search across all attributes
+            searchRequest = buildSmartSearchFilters(searchValue, searchFilters, props.entityName || "UnknownEntity");
+        } else if (uiMode === "mixed") {
+            // Search across all attributes with string value
+            searchRequest = buildSmartSearchFilters(searchValue, searchFilters, props.entityName || "UnknownEntity");
+        } else {
+            // Type-specific search
+            const relevantFilters = searchFilters.filter((f: ISearchFilter) => {
+                if (uiMode === "string") {
+                    return f.attributeType === "String";
+                }
+                if (uiMode === "numeric") {
+                    return ["Integer", "Long", "Decimal"].includes(f.attributeType);
+                }
+                if (uiMode === "date") {
+                    return f.attributeType === "DateTime";
+                }
+                if (uiMode === "boolean") {
+                    return f.attributeType === "Boolean";
+                }
+                if (uiMode === "enum") {
+                    return f.attributeType === "Enum";
+                }
+                return false;
+            });
+
+            if (relevantFilters.length > 0) {
+                searchRequest = buildTypedSearchFilters(
+                    searchValue,
+                    relevantFilters[0], // Use first matching filter
+                    selectedOperator,
+                    props.entityName || "UnknownEntity",
+                    searchState.searchValue2
+                );
+            }
+        }
+
+        if (searchRequest) {
+            // Update search description
+            const description = getSearchDescription(searchRequest);
+            setSearchState(prev => ({ ...prev, searchDescription: description }));
+
+            // Execute the search
+            if (props.searchEndpoint) {
+                executeAdvancedSearch(searchRequest);
+            } else {
+                // Fallback to client-side search
+                baseSearchHook.setSearchQuery(searchValue);
+            }
+        }
+    }, [searchState, searchFilters, props.entityName, props.searchEndpoint, executeAdvancedSearch, baseSearchHook]);
+
+    // Auto-execute search when value changes in auto mode
+    useEffect(() => {
+        if (searchState.uiMode === "auto" && searchState.searchValue) {
+            const timer = setTimeout(() => {
+                executeSearch();
+            }, props.searchDebounce || 300);
+
+            return () => clearTimeout(timer);
+        }
+    }, [searchState.searchValue, searchState.uiMode, executeSearch, props.searchDebounce]);
+
+    return {
+        // Base search functionality
+        ...baseSearchHook,
+
+        // Advanced search additions
+        searchFilters,
+        hasMultipleTypes,
+        availableModes,
+        searchState,
+        setUIMode,
+        setSelectedOperator,
+        setSearchValue,
+        setSearchValue2,
+        setSelectedEnumValues,
+        setSelectedBooleanValue,
+        executeSearch,
+        executeAdvancedSearch
+    };
+}

@@ -1,0 +1,287 @@
+import {
+    SearchMode,
+    ISearchOptions,
+    ISearchContext,
+    IModeDetectionResult,
+    ISearchAdapter
+} from "../types/UnifiedSearchTypes";
+
+/**
+ * Configuration for mode detection
+ */
+interface IModeDetectorConfig {
+    // Thresholds
+    smallDatasetThreshold: number; // Below this, use datasource
+    largeDatasetThreshold: number; // Above this, prefer server
+    webWorkerThreshold: number; // Above this, use web worker for client search
+
+    // Feature requirements
+    requireTypeAwareFiltering: boolean;
+    requireFuzzySearch: boolean;
+    requireAncestorExpansion: boolean;
+
+    // Performance targets
+    targetResponseTime: number; // Target response time in ms
+}
+
+/**
+ * Default configuration
+ */
+const DEFAULT_CONFIG: IModeDetectorConfig = {
+    smallDatasetThreshold: 1000,
+    largeDatasetThreshold: 10000,
+    webWorkerThreshold: 100,
+    requireTypeAwareFiltering: false,
+    requireFuzzySearch: false,
+    requireAncestorExpansion: false,
+    targetResponseTime: 200
+};
+
+/**
+ * Intelligent search mode detection based on context and requirements
+ */
+export class SearchModeDetector {
+    private config: IModeDetectorConfig;
+    private adapters: Map<SearchMode, ISearchAdapter>;
+    private context: ISearchContext;
+
+    constructor(
+        context: ISearchContext,
+        adapters: Map<SearchMode, ISearchAdapter>,
+        config?: Partial<IModeDetectorConfig>
+    ) {
+        this.context = context;
+        this.adapters = adapters;
+        this.config = { ...DEFAULT_CONFIG, ...config };
+    }
+
+    /**
+     * Detect the best search mode for given options
+     */
+    detectMode(options: ISearchOptions, enabledModes?: SearchMode[]): IModeDetectionResult {
+        const reasons: string[] = [];
+        const scores = new Map<SearchMode, number>();
+        const alternativeModes: SearchMode[] = [];
+
+        // Get available adapters
+        const availableAdapters = this.getAvailableAdapters(enabledModes);
+
+        if (availableAdapters.length === 0) {
+            return {
+                recommendedMode: "client", // Fallback
+                reasons: ["No adapters available"],
+                alternativeModes: [],
+                performance: {
+                    estimatedTime: Infinity,
+                    confidence: 0,
+                    factors: ["No available adapters"]
+                }
+            };
+        }
+
+        // Score each adapter
+        for (const adapter of availableAdapters) {
+            const score = this.scoreAdapter(adapter, options, reasons);
+            scores.set(adapter.mode, score);
+        }
+
+        // Sort by score and priority
+        const sortedAdapters = availableAdapters.sort((a, b) => {
+            const scoreA = scores.get(a.mode) || 0;
+            const scoreB = scores.get(b.mode) || 0;
+
+            // If scores are close, use priority
+            if (Math.abs(scoreA - scoreB) < 10) {
+                return b.priority - a.priority;
+            }
+
+            return scoreB - scoreA;
+        });
+
+        // Get recommended and alternatives
+        const recommended = sortedAdapters[0];
+        alternativeModes.push(...sortedAdapters.slice(1, 4).map(a => a.mode));
+
+        // Get performance estimate
+        const performance = recommended.estimatePerformance(options);
+
+        return {
+            recommendedMode: recommended.mode,
+            reasons,
+            alternativeModes,
+            performance
+        };
+    }
+
+    /**
+     * Get available adapters
+     */
+    private getAvailableAdapters(enabledModes?: SearchMode[]): ISearchAdapter[] {
+        const adapters: ISearchAdapter[] = [];
+
+        for (const [mode, adapter] of this.adapters) {
+            // Check if mode is enabled
+            if (enabledModes && !enabledModes.includes(mode)) {
+                continue;
+            }
+
+            // Check if adapter is available
+            if (adapter.isAvailable()) {
+                adapters.push(adapter);
+            }
+        }
+
+        return adapters;
+    }
+
+    /**
+     * Score an adapter based on current context
+     */
+    private scoreAdapter(adapter: ISearchAdapter, options: ISearchOptions, reasons: string[]): number {
+        let score = 50; // Base score
+        const nodeCount = this.context.nodes.size;
+
+        // Dataset size scoring
+        switch (adapter.mode) {
+            case "cache":
+                // Always check cache first
+                score += 50;
+                reasons.push("Cache always checked first");
+                break;
+
+            case "session":
+                // Good for small to medium datasets
+                if (nodeCount < this.config.smallDatasetThreshold) {
+                    score += 40;
+                    reasons.push("Small dataset - session search preferred");
+                }
+                break;
+
+            case "client":
+                // Good for medium datasets or offline
+                if (this.context.isOffline) {
+                    score += 60;
+                    reasons.push("Offline - client search required");
+                } else if (
+                    nodeCount >= this.config.smallDatasetThreshold &&
+                    nodeCount < this.config.largeDatasetThreshold
+                ) {
+                    score += 30;
+                    reasons.push("Medium dataset - client search suitable");
+                }
+                break;
+
+            case "datasource":
+                // Best for small datasets with native Mendix support
+                if (nodeCount < this.config.smallDatasetThreshold) {
+                    score += 45;
+                    reasons.push("Small dataset - datasource search optimal");
+                }
+                break;
+
+            case "server":
+                // Best for large datasets
+                if (nodeCount >= this.config.largeDatasetThreshold) {
+                    score += 50;
+                    reasons.push("Large dataset - server search recommended");
+                }
+                if (this.context.isOffline) {
+                    score -= 100; // Can't use when offline
+                    reasons.push("Offline - server search unavailable");
+                }
+                break;
+        }
+
+        // Feature requirement scoring
+        if (options.fuzzySearch && adapter.supports("fuzzySearch" as any)) {
+            score += 20;
+            reasons.push(`${adapter.name} supports fuzzy search`);
+        }
+
+        if (options.includeAncestors && adapter.supports("ancestorExpansion" as any)) {
+            score += 15;
+            reasons.push(`${adapter.name} supports ancestor expansion`);
+        }
+
+        // Performance scoring
+        const performance = adapter.estimatePerformance(options);
+        if (performance.estimatedTime <= this.config.targetResponseTime) {
+            score += 30;
+            reasons.push(`${adapter.name} meets performance target`);
+        } else {
+            const penalty = Math.min(20, (performance.estimatedTime - this.config.targetResponseTime) / 50);
+            score -= penalty;
+        }
+
+        // Confidence bonus
+        score += performance.confidence * 10;
+
+        return Math.max(0, score);
+    }
+
+    /**
+     * Get fallback chain for progressive search
+     */
+    getFallbackChain(primaryMode: SearchMode, enabledModes?: SearchMode[]): SearchMode[] {
+        const chain: SearchMode[] = [];
+        const availableAdapters = this.getAvailableAdapters(enabledModes);
+
+        // Always start with cache if available
+        const cacheAdapter = availableAdapters.find(a => a.mode === "cache");
+        if (cacheAdapter) {
+            chain.push("cache");
+        }
+
+        // Add primary mode if not cache
+        if (primaryMode !== "cache") {
+            chain.push(primaryMode);
+        }
+
+        // Add complementary modes
+        if (primaryMode === "server" && !this.context.isOffline) {
+            // Server search - add fast local searches first
+            if (availableAdapters.find(a => a.mode === "session")) {
+                chain.push("session");
+            }
+            if (availableAdapters.find(a => a.mode === "client")) {
+                chain.push("client");
+            }
+        } else if (primaryMode === "datasource") {
+            // Datasource search - add client for better highlighting
+            if (availableAdapters.find(a => a.mode === "client")) {
+                chain.push("client");
+            }
+        }
+
+        // Remove duplicates while preserving order
+        return [...new Set(chain)];
+    }
+
+    /**
+     * Update configuration
+     */
+    updateConfig(config: Partial<IModeDetectorConfig>): void {
+        this.config = { ...this.config, ...config };
+    }
+
+    /**
+     * Get mode statistics for display
+     */
+    getModeStats(): Map<SearchMode, { available: boolean; score: number; reasons: string[] }> {
+        const stats = new Map<SearchMode, { available: boolean; score: number; reasons: string[] }>();
+        const dummyOptions: ISearchOptions = { query: "test" };
+
+        for (const [mode, adapter] of this.adapters) {
+            const reasons: string[] = [];
+            const score = this.scoreAdapter(adapter, dummyOptions, reasons);
+
+            stats.set(mode, {
+                available: adapter.isAvailable(),
+                score,
+                reasons
+            });
+        }
+
+        return stats;
+    }
+}

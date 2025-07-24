@@ -1,0 +1,479 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    IUnifiedSearchConfig,
+    IUseUnifiedTreeSearchReturn,
+    ISearchOptions,
+    ISearchResponse,
+    IUnifiedSearchResult,
+    ISearchError,
+    ISearchContext,
+    SearchMode,
+    ISearchAdapter,
+    IAdapterStats
+} from "../types/UnifiedSearchTypes";
+import { TreeNode, SearchResult } from "../types/TreeTypes";
+import { ObjectItem } from "mendix";
+
+// Import adapters
+import { CacheSearchAdapter } from "../adapters/CacheSearchAdapter";
+import { SessionSearchAdapter } from "../adapters/SessionSearchAdapter";
+import { ClientSearchAdapter } from "../adapters/ClientSearchAdapter";
+import { DatasourceSearchAdapter } from "../adapters/DatasourceSearchAdapter";
+import { ServerSearchAdapter } from "../adapters/ServerSearchAdapter";
+
+// Import utilities
+import { SearchModeDetector } from "../utils/searchModeDetector";
+import { useOfflineDetection } from "../utils/offlineDetector";
+import { debounce } from "../utils/debounce";
+
+/**
+ * Unified tree search hook that intelligently uses different search strategies
+ */
+export function useUnifiedTreeSearch(
+    config: IUnifiedSearchConfig,
+    nodes: Map<string, TreeNode>,
+    expandedNodes: Set<string>,
+    loadedNodes: Set<string>
+): IUseUnifiedTreeSearchReturn {
+    // State
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchResults, setSearchResults] = useState<IUnifiedSearchResult[]>([]);
+    const [totalResults, setTotalResults] = useState(0);
+    const [hasMore, setHasMore] = useState(false);
+    const [currentMode, setCurrentMode] = useState<SearchMode | null>(null);
+    const [errors, setErrors] = useState<ISearchError[]>([]);
+    const [lastError, setLastError] = useState<ISearchError | null>(null);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [lastSearchTime, setLastSearchTime] = useState(0);
+
+    // Refs
+    const adaptersRef = useRef<Map<SearchMode, ISearchAdapter>>(new Map());
+    const modeDetectorRef = useRef<SearchModeDetector | null>(null);
+    const searchAbortRef = useRef<AbortController | null>(null);
+    const debouncedSearchRef = useRef<((query: string, options?: Partial<ISearchOptions>) => void) | null>(null);
+    const progressiveSearchRef = useRef<boolean>(false);
+    const cacheAdapterRef = useRef<CacheSearchAdapter | null>(null);
+
+    // Hooks
+    const isOffline = useOfflineDetection();
+
+    // Detect entity type
+    const entityType = useMemo(() => {
+        if (config.datasource.items && config.datasource.items.length > 0) {
+            const firstItem = config.datasource.items[0];
+            // @ts-ignore - accessing Mendix internals
+            return firstItem?.getEntity?.() || firstItem?._entity || undefined;
+        }
+        return undefined;
+    }, [config.datasource.items]);
+
+    // Create search context
+    const searchContext: ISearchContext = useMemo(() => {
+        // Build object items map
+        const objectItems = new Map<string, ObjectItem>();
+        if (config.datasource.items) {
+            config.datasource.items.forEach(item => {
+                const nodeId = config.nodeIdAttribute.get(item).value?.toString();
+                if (nodeId) {
+                    objectItems.set(nodeId, item);
+                }
+            });
+        }
+
+        return {
+            nodes,
+            objectItems,
+            expandedNodes,
+            loadedNodes,
+            isOffline,
+            entityType
+        };
+    }, [nodes, expandedNodes, loadedNodes, isOffline, entityType, config.datasource.items, config.nodeIdAttribute]);
+
+    // Initialize adapters
+    useEffect(() => {
+        const adapters = new Map<SearchMode, ISearchAdapter>();
+
+        // Always create cache adapter
+        if (config.enableCache !== false) {
+            const cacheKey = config.widgetId || "default";
+            const cacheAdapter = new CacheSearchAdapter(searchContext, config.cacheSize, config.cacheTTL, cacheKey);
+            adapters.set("cache", cacheAdapter);
+            cacheAdapterRef.current = cacheAdapter;
+        }
+
+        // Session adapter
+        if (config.searchAttributes && config.searchAttributes.length > 0) {
+            adapters.set(
+                "session",
+                new SessionSearchAdapter(searchContext, config.nodeIdAttribute, config.searchAttributes, entityType)
+            );
+        }
+
+        // Client adapter
+        if (config.enableWebWorker !== false && config.searchAttributes) {
+            adapters.set(
+                "client",
+                new ClientSearchAdapter(searchContext, config.searchAttributes, config.webWorkerThreshold)
+            );
+        }
+
+        // Datasource adapter
+        if (config.searchAttributes) {
+            adapters.set(
+                "datasource",
+                new DatasourceSearchAdapter(
+                    searchContext,
+                    config.datasource,
+                    config.nodeIdAttribute,
+                    config.searchAttributes
+                )
+            );
+        }
+
+        // Server adapter
+        if (config.enableServerSearch && config.serverEndpoint && config.searchAttributes) {
+            adapters.set(
+                "server",
+                new ServerSearchAdapter(
+                    searchContext,
+                    config.serverEndpoint,
+                    config.searchAttributes,
+                    config.serverTimeout
+                )
+            );
+        }
+
+        adaptersRef.current = adapters;
+
+        // Initialize mode detector
+        modeDetectorRef.current = new SearchModeDetector(searchContext, adapters, {
+            webWorkerThreshold: config.webWorkerThreshold,
+            targetResponseTime: 200
+        });
+
+        // Cleanup
+        return () => {
+            adapters.forEach(adapter => adapter.cancel());
+        };
+    }, [config, searchContext, entityType]);
+
+    // Create debounced search
+    useEffect(() => {
+        debouncedSearchRef.current = debounce((query: string, options?: Partial<ISearchOptions>) => {
+            performSearch(query, options);
+        }, config.searchDebounce || 300);
+    }, [config.searchDebounce]);
+
+    /**
+     * Perform unified search
+     */
+    const performSearch = useCallback(
+        async (query: string, options?: Partial<ISearchOptions>) => {
+            // Cancel previous search
+            if (searchAbortRef.current) {
+                searchAbortRef.current.abort();
+            }
+
+            // Clear if empty query
+            if (!query || query.length < (config.minSearchLength || 2)) {
+                setSearchResults([]);
+                setTotalResults(0);
+                setHasMore(false);
+                setCurrentMode(null);
+                return;
+            }
+
+            // Create new abort controller
+            searchAbortRef.current = new AbortController();
+            const signal = searchAbortRef.current.signal;
+
+            setIsSearching(true);
+            setErrors([]);
+            setLastError(null);
+
+            const searchOptions: ISearchOptions = {
+                query,
+                page: currentPage,
+                pageSize: config.resultsPerPage || 50,
+                searchAttributes: config.searchAttributes?.map(attr => attr.id),
+                includeAncestors: config.expandAncestors,
+                signal,
+                ...options
+            };
+
+            // Detect best mode or use forced mode
+            let searchMode: SearchMode;
+            let fallbackChain: SearchMode[] = [];
+
+            if (config.mode === "auto" || !config.mode) {
+                const detection = modeDetectorRef.current!.detectMode(searchOptions, config.enabledModes);
+                searchMode = detection.recommendedMode;
+                fallbackChain = modeDetectorRef.current!.getFallbackChain(searchMode, config.enabledModes);
+            } else {
+                searchMode = config.mode;
+                fallbackChain = config.fallbackChain || [searchMode];
+            }
+
+            // Notify mode selection
+            if (currentMode && currentMode !== searchMode) {
+                config.onModeSwitch?.(currentMode, searchMode, "Mode detection");
+            }
+            setCurrentMode(searchMode);
+
+            const startTime = Date.now();
+            let finalResults: IUnifiedSearchResult[] = [];
+            let totalCount = 0;
+            let hasMoreResults = false;
+            const searchErrors: ISearchError[] = [];
+
+            // Progressive search through fallback chain
+            progressiveSearchRef.current = true;
+            for (const mode of fallbackChain) {
+                if (!progressiveSearchRef.current || signal.aborted) {
+                    break;
+                }
+
+                const adapter = adaptersRef.current.get(mode);
+                if (!adapter || !adapter.isAvailable()) {
+                    continue;
+                }
+
+                try {
+                    config.onSearchStart?.(mode);
+
+                    const response = await adapter.search(searchOptions);
+
+                    // Merge results (later results might be more comprehensive)
+                    if (response.results.length > 0) {
+                        finalResults = mergeResults(finalResults, response.results, mode === "server");
+                        totalCount = Math.max(totalCount, response.total);
+                        hasMoreResults = hasMoreResults || response.hasMore;
+
+                        // Update UI progressively
+                        if (!signal.aborted) {
+                            setSearchResults([...finalResults]);
+                            setTotalResults(totalCount);
+                            setHasMore(hasMoreResults);
+                        }
+                    }
+
+                    config.onSearchComplete?.(mode, response);
+
+                    // Cache successful results (except from cache itself)
+                    if (mode !== "cache" && cacheAdapterRef.current && response.results.length > 0) {
+                        const cacheResults: SearchResult[] = response.results.map(r => ({
+                            nodeId: r.nodeId,
+                            matches: r.matches.map(m => ({
+                                attribute: m.attribute,
+                                value: m.value,
+                                matchedText: m.matchedText,
+                                startIndex: m.highlights?.[0]?.start,
+                                endIndex: m.highlights?.[0]?.end
+                            })),
+                            score: r.score
+                        }));
+                        cacheAdapterRef.current.storeResults(query, cacheResults);
+                    }
+
+                    // If server search succeeded, stop progressive search
+                    if (mode === "server" && response.results.length > 0) {
+                        progressiveSearchRef.current = false;
+                    }
+                } catch (error: any) {
+                    if (error.message === "Search cancelled") {
+                        break;
+                    }
+
+                    const searchError: ISearchError = {
+                        adapter: mode,
+                        message: error.message || "Unknown error",
+                        code: error.code,
+                        recoverable: true
+                    };
+
+                    searchErrors.push(searchError);
+                    setLastError(searchError);
+                    config.onSearchError?.(searchError);
+                }
+            }
+
+            // Final update
+            if (!signal.aborted) {
+                setSearchResults(finalResults);
+                setTotalResults(totalCount);
+                setHasMore(hasMoreResults);
+                setErrors(searchErrors);
+                setIsSearching(false);
+                setLastSearchTime(Date.now() - startTime);
+            }
+
+            searchAbortRef.current = null;
+        },
+        [config, currentPage, currentMode]
+    );
+
+    /**
+     * Merge search results from different sources
+     */
+    const mergeResults = useCallback(
+        (
+            existing: IUnifiedSearchResult[],
+            newResults: IUnifiedSearchResult[],
+            replaceAll = false
+        ): IUnifiedSearchResult[] => {
+            if (replaceAll) {
+                return newResults;
+            }
+
+            const resultMap = new Map<string, IUnifiedSearchResult>();
+
+            // Add existing results
+            existing.forEach(r => resultMap.set(r.nodeId, r));
+
+            // Add/update with new results
+            newResults.forEach(r => {
+                const existing = resultMap.get(r.nodeId);
+                if (!existing || r.source === "server") {
+                    // Server results override others
+                    resultMap.set(r.nodeId, r);
+                }
+            });
+
+            return Array.from(resultMap.values());
+        },
+        []
+    );
+
+    /**
+     * Public search method
+     */
+    const search = useCallback((query: string, options?: Partial<ISearchOptions>) => {
+        setSearchQuery(query);
+        if (debouncedSearchRef.current) {
+            debouncedSearchRef.current(query, options);
+        }
+    }, []);
+
+    /**
+     * Cancel ongoing search
+     */
+    const cancelSearch = useCallback(() => {
+        if (searchAbortRef.current) {
+            searchAbortRef.current.abort();
+            searchAbortRef.current = null;
+        }
+        progressiveSearchRef.current = false;
+        setIsSearching(false);
+        adaptersRef.current.forEach(adapter => adapter.cancel());
+    }, []);
+
+    /**
+     * Clear all caches
+     */
+    const clearCache = useCallback(() => {
+        adaptersRef.current.forEach(adapter => adapter.clearCache?.());
+    }, []);
+
+    /**
+     * Force specific search mode
+     */
+    const forceMode = useCallback(
+        (mode: SearchMode) => {
+            cancelSearch();
+            // Temporarily override mode
+            const originalMode = config.mode;
+            config.mode = mode;
+            search(searchQuery);
+            // Restore after a delay
+            setTimeout(() => {
+                config.mode = originalMode;
+            }, 100);
+        },
+        [config, searchQuery, search, cancelSearch]
+    );
+
+    /**
+     * Get adapter info
+     */
+    const getAdapterInfo = useCallback((mode: SearchMode): ISearchAdapter | null => {
+        return adaptersRef.current.get(mode) || null;
+    }, []);
+
+    /**
+     * Get available modes
+     */
+    const availableModes = useMemo((): SearchMode[] => {
+        const modes: SearchMode[] = [];
+        adaptersRef.current.forEach((adapter, mode) => {
+            if (adapter.isAvailable()) {
+                modes.push(mode);
+            }
+        });
+        return modes;
+    }, [searchContext]);
+
+    /**
+     * Get mode statistics
+     */
+    const modeStats = useMemo((): Map<SearchMode, IAdapterStats> => {
+        const stats = new Map<SearchMode, IAdapterStats>();
+        adaptersRef.current.forEach((adapter, mode) => {
+            if (adapter.getStats) {
+                stats.set(mode, adapter.getStats());
+            }
+        });
+        return stats;
+    }, []);
+
+    // Handle query changes
+    useEffect(() => {
+        if (searchQuery) {
+            search(searchQuery);
+        }
+    }, [searchQuery]);
+
+    // Handle page changes
+    useEffect(() => {
+        if (searchQuery && currentPage > 0) {
+            search(searchQuery, { page: currentPage });
+        }
+    }, [currentPage]);
+
+    return {
+        // Search actions
+        search,
+        cancelSearch,
+        clearCache,
+
+        // Search state
+        searchQuery,
+        isSearching,
+        searchResults,
+        totalResults,
+        hasMore,
+
+        // Mode information
+        currentMode,
+        availableModes,
+        modeStats,
+
+        // Error handling
+        errors,
+        lastError,
+
+        // Pagination
+        currentPage,
+        setPage: setCurrentPage,
+        pageSize: config.resultsPerPage || 50,
+
+        // Performance
+        lastSearchTime,
+        isOffline,
+
+        // Advanced
+        forceMode,
+        getAdapterInfo
+    };
+}

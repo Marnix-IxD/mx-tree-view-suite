@@ -1,0 +1,65 @@
+/* TreeContextMenu.css - Right-click context menu styles */
+.mx-tree-context-menu {
+    position: fixed;
+    min-width: 160px;
+    padding: 4px 0;
+    background-color: var(--mx-tree-menu-background, #ffffff);
+    border: 1px solid var(--mx-tree-border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+}
+
+.mx-tree-context-menu-item {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: inherit;
+    color: var(--mx-tree-text-color);
+    cursor: pointer;
+    transition: background-color var(--mx-tree-transition-duration) var(--mx-tree-transition-easing);
+}
+
+.mx-tree-context-menu-item:hover:not(:disabled) {
+    background-color: var(--mx-tree-hover-background);
+}
+
+.mx-tree-context-menu-item:disabled {
+    color: var(--mx-tree-muted-text-color, #999999);
+    cursor: not-allowed;
+}
+
+.mx-tree-context-menu-item-separator {
+    height: 1px;
+    margin: 4px 0;
+    padding: 0;
+    background-color: var(--mx-tree-border-color);
+    cursor: default;
+}
+
+.mx-tree-context-menu-item-separator:hover {
+    background-color: var(--mx-tree-border-color);
+}
+
+.mx-tree-context-menu-item-icon {
+    display: inline-block;
+    width: 16px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.mx-tree-context-menu-item-label {
+    vertical-align: middle;
+}
+
+.mx-tree-context-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+}

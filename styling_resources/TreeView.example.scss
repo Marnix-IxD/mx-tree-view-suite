@@ -1,0 +1,1480 @@
+// TreeView Comprehensive SCSS Example for Mendix Developers
+// This file demonstrates ALL available BEM classes for the TreeView widget
+// Organized by component/feature for easy navigation
+
+// ============================================
+// MAIN BLOCK AND CORE STRUCTURE
+// ============================================
+
+.mx-tree {
+    // CSS Variables - Override these for theming
+    --mx-tree-text-color: #374151;
+    --mx-tree-background: #ffffff;
+    --mx-tree-border-color: #e5e7eb;
+    --mx-tree-selected-background: rgba(59, 130, 246, 0.1);
+    --mx-tree-selected-text: #1d4ed8;
+    --mx-tree-selected-border: #3b82f6;
+    --mx-tree-hover-background: rgba(0, 0, 0, 0.04);
+    --mx-tree-focus-outline: 2px solid #3b82f6;
+    --mx-tree-focus-color: #2196f3;
+    --mx-tree-muted-text-color: #6b7280;
+    --mx-tree-icon-color: #6b7280;
+    --mx-tree-node-height: 32px;
+    --mx-tree-indent-size: 20px;
+    --mx-tree-transition-duration: 200ms;
+    --mx-tree-transition-easing: ease-in-out;
+    
+    // Block base styles
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    
+    // Global element selectors
+    * {
+        box-sizing: border-box;
+    }
+    
+    button {
+        font: inherit;
+        color: inherit;
+    }
+    
+    svg {
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        vertical-align: middle;
+        
+        path, circle, rect, polygon, line {
+            fill: currentColor;
+        }
+        
+        &[fill="none"] {
+            path, circle {
+                fill: none;
+                stroke: currentColor;
+            }
+        }
+    }
+}
+
+// ============================================
+// NODE COMPONENT
+// ============================================
+
+.mx-tree__node {
+    // Base node styles
+    display: flex;
+    align-items: center;
+    min-height: var(--mx-tree-node-height);
+    cursor: pointer;
+    user-select: none;
+    
+    &:hover {
+        background-color: var(--mx-tree-hover-background);
+    }
+    
+    // Node content wrapper
+    &-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+    }
+    
+    // Node label
+    &-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    // Custom content containers
+    &-custom-content {
+        flex: 1;
+        &--highlighted {
+            font-weight: 600;
+        }
+    }
+    
+    &-default-content {
+        flex: 1;
+        &--highlighted {
+            font-weight: 600;
+        }
+    }
+    
+    // Expand/collapse button
+    &-expand-button {
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: none;
+        background: none;
+        cursor: pointer;
+        
+        &:hover {
+            background-color: var(--mx-tree-hover-background);
+        }
+        
+        &:disabled {
+            cursor: default;
+        }
+    }
+    
+    &-expand-icon {
+        width: 16px;
+        height: 16px;
+        
+        svg {
+            transition: transform var(--mx-tree-transition-duration);
+        }
+    }
+    
+    &-expand-icon-svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    &-expand-spacer {
+        display: inline-block;
+    }
+    
+    // Selection controls
+    &-selection {
+        display: flex;
+        align-items: center;
+        margin-right: 6px;
+    }
+    
+    &-checkbox {
+        margin-right: 6px;
+        
+        &--checked {
+            // Checked state
+        }
+    }
+    
+    &-radio {
+        margin-right: 6px;
+        
+        &--checked {
+            // Checked state
+        }
+    }
+    
+    // Visibility toggle
+    &-visibility-button {
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: none;
+        background: none;
+        cursor: pointer;
+        
+        &:hover {
+            opacity: 0.8;
+        }
+    }
+    
+    &-visibility-icon {
+        width: 16px;
+        height: 16px;
+        
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+    }
+    
+    &-visibility-icon-svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    // Icons
+    &-icon {
+        width: 16px;
+        height: 16px;
+        margin-right: 4px;
+    }
+    
+    // Tree lines
+    &-lines {
+        position: absolute;
+        pointer-events: none;
+        
+        &--visible {
+            .mx-tree__node-line {
+                display: block;
+            }
+        }
+    }
+    
+    &-line {
+        position: absolute;
+        background-color: var(--mx-tree-line-color, #e0e0e0);
+        
+        &-vertical {
+            width: 1px;
+            height: 100%;
+        }
+        
+        &-horizontal {
+            height: 1px;
+        }
+    }
+    
+    // Drag handle
+    &-drag-handle {
+        width: 20px;
+        height: 20px;
+        cursor: grab;
+        opacity: 0;
+        transition: opacity var(--mx-tree-transition-duration);
+        
+        &:active {
+            cursor: grabbing;
+        }
+        
+        &--visible {
+            opacity: 0.5;
+            
+            &:hover {
+                opacity: 1;
+            }
+        }
+        
+        &--touch {
+            opacity: 1 !important;
+        }
+        
+        &-icon {
+            font-size: 12px;
+            
+            svg {
+                width: 12px;
+                height: 12px;
+            }
+        }
+    }
+    
+    // Node state modifiers
+    &--selected {
+        background-color: var(--mx-tree-selected-background);
+        color: var(--mx-tree-selected-text);
+        
+        &:hover {
+            background-color: var(--mx-tree-selected-hover-background);
+        }
+    }
+    
+    &--highlighted {
+        background-color: var(--mx-tree-highlight-color);
+    }
+    
+    &--focused {
+        outline: var(--mx-tree-focus-outline);
+        outline-offset: -2px;
+    }
+    
+    &--hovered {
+        background-color: var(--mx-tree-hover-background);
+    }
+    
+    &--expanded {
+        .mx-tree__node-expand-icon-svg {
+            transform: rotate(90deg);
+        }
+    }
+    
+    &--collapsed {
+        // Collapsed state
+    }
+    
+    &--leaf {
+        .mx-tree__node-expand-button {
+            visibility: hidden;
+        }
+    }
+    
+    &--parent {
+        // Parent node styles
+    }
+    
+    &--visible {
+        // Visible state
+    }
+    
+    &--hidden {
+        opacity: 0.4;
+    }
+    
+    &--sticky {
+        position: sticky;
+        background-color: var(--mx-tree-sticky-background);
+        z-index: 10;
+    }
+    
+    &--dragging {
+        opacity: 0.5;
+        cursor: grabbing !important;
+    }
+    
+    &--dragged-over {
+        background-color: var(--mx-tree-drag-over-background);
+    }
+    
+    &--drop-inside {
+        outline: 2px solid var(--mx-tree-drop-inside-outline);
+    }
+    
+    &--invalid-drop {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+    &--auto-expand-pending {
+        &::after {
+            // Auto-expand indicator
+        }
+    }
+    
+    // Constraint-related modifiers
+    &--constraint-violation {
+        background-color: var(--mx-tree-constraint-violation-background);
+        
+        .mx-tree__node-content {
+            opacity: 0.6;
+        }
+    }
+    
+    &--allowed-drop {
+        background-color: var(--mx-tree-allowed-drop-background);
+    }
+    
+    &--forbidden-drop {
+        background-color: var(--mx-tree-forbidden-drop-background);
+    }
+    
+    &--same-parent-constraint {
+        &::after {
+            // Constraint indicator
+        }
+    }
+    
+    &--category-locked {
+        border-left: 3px solid var(--mx-tree-category-locked-color);
+    }
+    
+    &--max-depth-reached {
+        background: repeating-linear-gradient(45deg, transparent, transparent 10px);
+    }
+    
+    // Level-specific styles
+    @for $i from 0 through 10 {
+        &--level-#{$i} {
+            padding-left: calc(#{$i} * var(--mx-tree-indent-size));
+        }
+    }
+}
+
+// ============================================
+// TOOLBAR
+// ============================================
+
+.mx-tree__toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    flex-shrink: 0;
+    
+    &-group {
+        display: flex;
+        gap: 4px;
+        
+        &--expand {
+            // Expand/collapse group
+        }
+        
+        &--selection {
+            // Selection group
+        }
+        
+        &--history {
+            // Undo/redo group
+        }
+    }
+    
+    &-button {
+        padding: 6px 12px;
+        border: 1px solid var(--mx-tree-border-color);
+        background: transparent;
+        cursor: pointer;
+        
+        &:hover:not(:disabled) {
+            background-color: var(--mx-tree-hover-background);
+        }
+        
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        &--disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+    
+    &-icon {
+        width: 14px;
+        height: 14px;
+        
+        svg {
+            width: 14px;
+            height: 14px;
+        }
+    }
+    
+    &-label {
+        margin-left: 4px;
+    }
+    
+    &-selection-count {
+        margin-left: 8px;
+        color: var(--mx-tree-muted-text-color);
+    }
+}
+
+// ============================================
+// SEARCH
+// ============================================
+
+.mx-tree__search {
+    padding: 12px;
+    background-color: var(--mx-tree-search-background);
+    
+    &-container {
+        position: relative;
+        padding: 8px;
+    }
+    
+    &-bar {
+        position: relative;
+        
+        &--searching {
+            // Searching state
+        }
+        
+        &--has-results {
+            // Has results state
+        }
+    }
+    
+    &-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    
+    &-input {
+        width: 100%;
+        padding: 8px 32px;
+        border: 1px solid var(--mx-tree-border-color);
+        border-radius: 4px;
+        
+        &:focus {
+            border-color: var(--mx-tree-focus-color);
+            box-shadow: 0 0 0 2px var(--mx-tree-focus-shadow-color);
+        }
+        
+        &::placeholder {
+            color: var(--mx-tree-placeholder-color);
+        }
+    }
+    
+    &-icon {
+        position: absolute;
+        left: 10px;
+        color: var(--mx-tree-search-icon-color);
+        
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+    }
+    
+    &-icon-svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    &-clear {
+        position: absolute;
+        right: 8px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        
+        &:hover {
+            color: var(--mx-tree-icon-hover-color);
+        }
+        
+        &-icon {
+            font-size: 18px;
+        }
+    }
+    
+    &-results {
+        margin-top: 8px;
+        
+        &-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+    }
+    
+    &-result {
+        &-count {
+            font-size: 0.875em;
+            color: var(--mx-tree-muted-text-color);
+        }
+        
+        &-item {
+            padding: 8px;
+            cursor: pointer;
+            
+            &:hover,
+            &--highlighted {
+                background-color: var(--mx-tree-hover-background);
+            }
+        }
+        
+        &-content {
+            flex: 1;
+        }
+        
+        &-label {
+            font-weight: 500;
+        }
+        
+        &-path,
+        &-category {
+            font-size: 0.875em;
+            color: var(--mx-tree-muted-text-color);
+        }
+        
+        &-match {
+            font-size: 0.875em;
+            color: var(--mx-tree-muted-text-color);
+        }
+        
+        &-arrow {
+            margin-left: 8px;
+        }
+    }
+    
+    &-status {
+        margin-top: 8px;
+    }
+    
+    &-empty {
+        text-align: center;
+        padding: 40px;
+        
+        &-icon {
+            font-size: 48px;
+            opacity: 0.3;
+        }
+        
+        &-hint {
+            font-size: 0.875em;
+            color: var(--mx-tree-muted-text-color);
+        }
+    }
+    
+    &-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        
+        &-spinner {
+            display: flex;
+            gap: 3px;
+        }
+        
+        &-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: currentColor;
+            animation: searchPulse 1.4s ease-in-out infinite;
+            
+            &:nth-child(1) { animation-delay: -0.32s; }
+            &:nth-child(2) { animation-delay: -0.16s; }
+        }
+    }
+    
+    // Search overlay
+    &-overlay {
+        position: absolute;
+        background-color: white;
+        border: 1px solid var(--mx-tree-border-color);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.2s, transform 0.2s;
+        
+        &--visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        &-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--mx-tree-border-color);
+        }
+        
+        &-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        &-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        &-footer {
+            padding: 8px 16px;
+            border-top: 1px solid var(--mx-tree-border-color);
+        }
+        
+        &-close {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            
+            &:hover {
+                background-color: var(--mx-tree-hover-background);
+            }
+        }
+    }
+    
+    &-query {
+        color: var(--mx-tree-muted-text-color);
+    }
+    
+    &-highlight {
+        background-color: var(--mx-tree-highlight-color);
+        font-weight: 600;
+    }
+    
+    &-hint {
+        font-size: 0.75em;
+        color: var(--mx-tree-muted-text-color);
+        
+        kbd {
+            padding: 2px 6px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+    }
+    
+    // Search status components
+    &-offline-notice {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+        padding: 8px 12px;
+    }
+    
+    &-offline-icon {
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+    }
+    
+    &-server-loading {
+        background-color: #e3f2fd;
+        border: 1px solid #bbdefb;
+        color: #1565c0;
+        padding: 8px 12px;
+    }
+    
+    &-timeout-notice {
+        background-color: #f5f5f5;
+        border: 1px solid #e0e0e0;
+        color: #666;
+        padding: 8px 12px;
+    }
+    
+    &-timeout-icon {
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+    }
+    
+    &-inline-status {
+        display: flex;
+        align-items: center;
+    }
+    
+    &-inline-spinner,
+    &-inline-offline {
+        width: 20px;
+        height: 20px;
+    }
+    
+    &-spinning {
+        animation: spin 1s linear infinite;
+        
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+    }
+    
+    &-total-count {
+        font-weight: normal;
+        color: var(--mx-tree-muted-text-color);
+    }
+}
+
+// ============================================
+// CONTENT AREAS
+// ============================================
+
+.mx-tree__content {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+.mx-tree__scroll-container {
+    height: 100%;
+    overflow: auto;
+}
+
+.mx-tree__virtual-scroll {
+    height: 100%;
+    
+    &-container {
+        overflow: auto;
+        position: relative;
+        height: 100%;
+    }
+    
+    &-spacer {
+        position: relative;
+    }
+    
+    &-item {
+        position: absolute;
+        width: 100%;
+    }
+}
+
+// ============================================
+// LOADING & EMPTY STATES
+// ============================================
+
+.mx-tree__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    
+    &-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--mx-tree-border-color);
+        border-top-color: var(--mx-tree-text-color);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        
+        svg {
+            width: 32px;
+            height: 32px;
+        }
+    }
+}
+
+.mx-tree__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    opacity: 0.6;
+}
+
+.mx-tree__unavailable {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    
+    &-icon {
+        font-size: 32px;
+        opacity: 0.5;
+        
+        svg {
+            width: 24px;
+            height: 24px;
+        }
+    }
+    
+    &-message {
+        opacity: 0.7;
+    }
+}
+
+// Warning icon modifier
+.mx-tree__icon--warning {
+    svg {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+// ============================================
+// STANDARD TREE VIEW
+// ============================================
+
+.mx-tree__standard {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    
+    &--loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+    
+    &--sticky-headers {
+        .mx-tree__node--sticky {
+            position: sticky;
+            background-color: var(--mx-tree-sticky-background);
+        }
+    }
+    
+    &--category-headers {
+        .mx-tree__node--sticky {
+            position: relative;
+        }
+    }
+    
+    &--virtual {
+        .mx-tree__content {
+            overflow: hidden;
+        }
+    }
+}
+
+// ============================================
+// CATEGORY & NODE HEADERS
+// ============================================
+
+.mx-tree__category-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--mx-tree-background);
+    border-bottom: 1px solid var(--mx-tree-border-color);
+}
+
+.mx-tree__category-divider {
+    padding: 8px 16px;
+    background-color: var(--mx-tree-category-bg);
+    border-top: 1px solid var(--mx-tree-border-color);
+    border-bottom: 1px solid var(--mx-tree-border-color);
+    font-weight: 600;
+    
+    &.mx-tree__node-header {
+        width: 100%;
+    }
+    
+    .mx-tree__node-header-text {
+        display: block;
+    }
+}
+
+.mx-tree__node-header {
+    background: var(--tree-group-header-bg-color);
+    color: var(--tree-group-header-text-color);
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--tree-group-header-border-color);
+    
+    &__text {
+        display: inline-block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        animation: slideInFromLeft var(--animation-duration) ease-out;
+    }
+    
+    &__count {
+        color: #666;
+        font-weight: normal;
+        font-size: 0.9em;
+        margin-left: 8px;
+    }
+    
+    &--category {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        
+        &::after {
+            // Fade gradient
+        }
+    }
+    
+    &--path {
+        font-size: 0.85em;
+        font-weight: normal;
+    }
+    
+    &--breadcrumb {
+        cursor: pointer;
+        
+        &:hover {
+            background: var(--tree-group-header-bg-color);
+        }
+    }
+    
+    &--animating {
+        .mx-tree__node-header__text {
+            animation: slideOutToLeft var(--animation-duration) ease-in;
+        }
+    }
+    
+    &--scroll-up {
+        .mx-tree__node-header__text {
+            animation: slideInFromRight var(--animation-duration) ease-out;
+        }
+    }
+    
+    &--merged {
+        .mx-tree__node-header__text {
+            font-size: 1em;
+        }
+    }
+    
+    &--shadow {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        
+        &::after {
+            display: none;
+        }
+    }
+}
+
+// ============================================
+// BREADCRUMB
+// ============================================
+
+.mx-tree-breadcrumb {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: var(--mx-tree-breadcrumb-background);
+    overflow-x: auto;
+    
+    &::-webkit-scrollbar {
+        height: 4px;
+    }
+    
+    &-item {
+        padding: 4px 8px;
+        cursor: pointer;
+        
+        &:hover {
+            color: var(--mx-tree-text-color);
+        }
+        
+        &-current {
+            color: var(--mx-tree-text-color);
+            font-weight: 500;
+        }
+        
+        &-collapsed {
+            position: relative;
+            
+            &::after {
+                content: '▼';
+                margin-left: 4px;
+                font-size: 10px;
+            }
+            
+            &[aria-expanded="true"]::after {
+                transform: rotate(180deg);
+            }
+        }
+        
+        &-icon {
+            svg {
+                width: 14px;
+                height: 14px;
+            }
+        }
+    }
+    
+    &-separator {
+        margin: 0 4px;
+        color: var(--mx-tree-separator-color);
+    }
+    
+    &-list {
+        display: flex;
+        align-items: center;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        
+        &-item {
+            display: inline-flex;
+            align-items: center;
+        }
+    }
+    
+    &-dropdown {
+        background: white;
+        border: 1px solid var(--mx-tree-border-color);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        
+        &-list {
+            list-style: none;
+            margin: 0;
+            padding: 4px 0;
+        }
+        
+        &-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            
+            &:hover {
+                background-color: var(--mx-tree-hover-background);
+            }
+        }
+    }
+}
+
+// ============================================
+// DRAG & DROP
+// ============================================
+
+.mx-tree__drop-indicator {
+    height: 2px;
+    background: var(--mx-tree-drop-indicator-color);
+    position: relative;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        left: -4px;
+        top: -3px;
+        width: 8px;
+        height: 8px;
+        background: var(--mx-tree-drop-indicator-color);
+        border-radius: 50%;
+    }
+    
+    &--before {
+        margin-top: -1px;
+    }
+    
+    &--after {
+        margin-bottom: -1px;
+    }
+}
+
+.mx-tree__drag {
+    &-layer {
+        position: fixed;
+        pointer-events: none;
+        z-index: 10000;
+    }
+    
+    &-preview {
+        background: white;
+        border: 2px solid #1890ff;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 8px;
+        
+        &--native {
+            .mx-tree__drag-preview-item {
+                background: white;
+                border: 1px solid var(--mx-tree-border-color);
+                padding: 4px 8px;
+            }
+            
+            .mx-tree__drag-stack {
+                position: relative;
+            }
+        }
+        
+        &--constraint-violation {
+            border-color: #f44336;
+            
+            .mx-tree__drag-preview-badge {
+                background: #f44336;
+            }
+        }
+        
+        &-container {
+            position: fixed;
+            pointer-events: none;
+            z-index: 10000;
+        }
+        
+        &-content {
+            max-height: 200px;
+            overflow: hidden;
+        }
+        
+        &-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+        }
+        
+        &-icon {
+            margin-right: 8px;
+        }
+        
+        &-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        &-count {
+            padding: 4px 8px;
+            border-top: 1px solid var(--mx-tree-border-color);
+            font-style: italic;
+        }
+        
+        &-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #1890ff;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+    }
+}
+
+.mx-tree__scroll-indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 40px;
+    pointer-events: none;
+    z-index: 10;
+    
+    &--top {
+        top: 0;
+        background: linear-gradient(to bottom, rgba(24, 144, 255, 0.2), transparent);
+    }
+    
+    &--bottom {
+        bottom: 0;
+        background: linear-gradient(to top, rgba(24, 144, 255, 0.2), transparent);
+    }
+}
+
+.mx-tree__constraint {
+    &-hint {
+        position: absolute;
+        padding: 2px 6px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        font-size: 11px;
+        border-radius: 3px;
+    }
+    
+    &-badges {
+        display: flex;
+        gap: 4px;
+        position: absolute;
+        top: 2px;
+        right: 2px;
+    }
+    
+    &-badge {
+        padding: 0 4px;
+        height: 16px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        font-size: 10px;
+        
+        &--active {
+            background: #1890ff;
+            color: white;
+        }
+    }
+}
+
+// ============================================
+// CONTEXT MENU
+// ============================================
+
+.mx-tree-context-menu {
+    position: fixed;
+    min-width: 160px;
+    padding: 4px 0;
+    background-color: white;
+    border: 1px solid var(--mx-tree-border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    
+    &-item {
+        display: block;
+        width: 100%;
+        padding: 8px 16px;
+        border: none;
+        background: none;
+        text-align: left;
+        cursor: pointer;
+        
+        &:hover:not(:disabled) {
+            background-color: var(--mx-tree-hover-background);
+        }
+        
+        &:disabled {
+            color: var(--mx-tree-muted-text-color);
+            cursor: not-allowed;
+        }
+        
+        &-separator {
+            height: 1px;
+            margin: 4px 0;
+            background-color: var(--mx-tree-border-color);
+        }
+        
+        &-icon {
+            display: inline-block;
+            width: 16px;
+            margin-right: 8px;
+            
+            svg {
+                width: 14px;
+                height: 14px;
+            }
+        }
+        
+        &-label {
+            vertical-align: middle;
+        }
+    }
+    
+    &-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 999;
+    }
+}
+
+// ============================================
+// METRICS OVERLAY (DEBUG)
+// ============================================
+
+.mx-tree__metrics {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 8px 12px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 12px;
+    font-family: monospace;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.mx-tree__metric {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    
+    &-label {
+        opacity: 0.8;
+    }
+    
+    &-value {
+        font-weight: bold;
+    }
+}
+
+// ============================================
+// MODIFIERS AND STATES
+// ============================================
+
+.mx-tree {
+    // Dark theme
+    &--dark {
+        --mx-tree-text-color: #f3f4f6;
+        --mx-tree-background: #1f2937;
+        --mx-tree-border-color: #374151;
+        --mx-tree-selected-background: rgba(59, 130, 246, 0.3);
+        
+        .mx-tree__node-header {
+            --tree-group-header-bg-color: #2a2a2a;
+            --tree-group-header-text-color: #ffffff;
+            --tree-group-header-border-color: #444444;
+        }
+    }
+    
+    // Dragging state
+    &--dragging {
+        * {
+            user-select: none !important;
+        }
+    }
+}
+
+// ============================================
+// RESPONSIVE UTILITIES
+// ============================================
+
+@media (max-width: 576px) {
+    .mx-tree__node {
+        &-expand-icon svg,
+        &-visibility-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+    }
+    
+    .mx-tree__toolbar-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+// ============================================
+// ANIMATIONS
+// ============================================
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes searchPulse {
+    0%, 80%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInFromLeft {
+    from {
+        transform: translateX(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutToLeft {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(-20px);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+// ============================================
+// SPECIAL CLASSES
+// ============================================
+
+// Navigation and highlighting
+.mx-tree-navigation-highlight {
+    animation: mx-tree-highlight 2s ease-in-out;
+}
+
+.mx-tree-node-navigation-target {
+    // Navigation target styles
+}
+
+.mx-tree-node-search-match {
+    // Search match styles
+}
+
+.mx-tree-search-highlight {
+    background-color: #fff3cd;
+    color: #856404;
+    font-weight: 600;
+}
+
+// Floating/sliding panels
+.mx-tree-floating-panel,
+.mx-tree-sliding-panel {
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+// Layout modifiers
+.mx-tree-compact {
+    // Compact mode styles
+}
+
+.mx-tree-spacious {
+    // Spacious mode styles
+}
+
+// Other utility classes
+.mx-tree-no-animation {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+.mx-tree-no-print {
+    @media print {
+        display: none !important;
+    }
+}

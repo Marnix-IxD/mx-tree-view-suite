@@ -1,0 +1,85 @@
+/* Tree Loading Bar - Minimal progress indicator */
+.mx-tree__loading-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: var(--mx-tree-loading-bg, rgba(0, 0, 0, 0.1));
+    overflow: hidden;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Thinner loading bar for floating mode (1-2px) */
+.floating-tree-view .mx-tree__loading-bar,
+.mx-tree-floating .mx-tree__loading-bar {
+    height: 2px;
+}
+
+/* Minimal loading bar for sliding panels */
+.mx-tree-panels .mx-tree__loading-bar,
+.sliding-panel-view .mx-tree__loading-bar {
+    height: 2px;
+    /* For sliding panels, ensure it sticks to viewport bottom */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.mx-tree__loading-bar-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 30%;
+    background-color: var(--mx-tree-loading-color, #007bff);
+    animation: mx-tree-loading-slide 1.5s ease-in-out infinite;
+    border-radius: 0 2px 2px 0;
+}
+
+@keyframes mx-tree-loading-slide {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(333.33%);
+    }
+}
+
+/* Dark mode support */
+.mx-tree--dark .mx-tree__loading-bar {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.mx-tree--dark .mx-tree__loading-bar-progress {
+    background-color: var(--mx-tree-loading-color-dark, #4dabf7);
+}
+
+/* Loading bar during search */
+.mx-tree--searching .mx-tree__loading-bar {
+    background-color: var(--mx-tree-search-loading-bg, rgba(255, 193, 7, 0.1));
+}
+
+.mx-tree--searching .mx-tree__loading-bar-progress {
+    background-color: var(--mx-tree-search-loading-color, #ffc107);
+}
+
+/* Ensure loading bar appears above tree content but below overlays */
+.mx-tree,
+.mx-tree__content,
+.sliding-panel-view,
+.floating-tree-content {
+    position: relative;
+}
+
+/* Smooth fade in/out transitions */
+.mx-tree__loading-bar {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.mx-tree__loading-bar--fade-out {
+    opacity: 0;
+}

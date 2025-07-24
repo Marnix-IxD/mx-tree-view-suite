@@ -1,0 +1,242 @@
+/* TreeScrollPreservation.css - Styles for scroll position preservation and navigation */
+
+/* Highlighted node animation for navigation feedback */
+.mx-tree__node--highlighted {
+    position: relative;
+    z-index: 10;
+    animation: mx-tree-node-highlight 2s ease-out forwards;
+}
+
+@keyframes mx-tree-node-highlight {
+    0% {
+        background-color: transparent;
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
+    }
+    10% {
+        background-color: rgba(59, 130, 246, 0.1);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4);
+        transform: scale(1.02);
+    }
+    30% {
+        background-color: rgba(59, 130, 246, 0.05);
+        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2);
+        transform: scale(1.01);
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        transform: scale(1);
+    }
+}
+
+/* Pulse effect for highlighted nodes */
+.mx-tree__node--highlighted::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(59, 130, 246, 0.3) 50%,
+        transparent 100%
+    );
+    animation: mx-tree-highlight-sweep 1s ease-out;
+    pointer-events: none;
+}
+
+@keyframes mx-tree-highlight-sweep {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Navigation loading indicator */
+.mx-tree__navigation-loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    padding: 16px 24px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+}
+
+.mx-tree__navigation-loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--mx-tree-primary-color, #3b82f6);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: mx-tree-spin 0.8s linear infinite;
+}
+
+@keyframes mx-tree-spin {
+    to { transform: rotate(360deg); }
+}
+
+.mx-tree__navigation-loading-text {
+    color: var(--mx-tree-text-color, #374151);
+    font-size: 14px;
+}
+
+/* Smooth scroll behavior for tree container */
+.mx-tree__scroll-container {
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+}
+
+/* Disable smooth scroll during rapid operations */
+.mx-tree__scroll-container--rapid {
+    scroll-behavior: auto;
+}
+
+/* Visual indicator for scroll anchors (debug mode) */
+.mx-tree--debug .mx-tree__scroll-anchor {
+    position: relative;
+}
+
+.mx-tree--debug .mx-tree__scroll-anchor::after {
+    content: '⚓';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--mx-tree-debug-color, #ef4444);
+    font-size: 12px;
+    opacity: 0.5;
+}
+
+/* Skeleton height preservation */
+.mx-tree__node--skeleton {
+    min-height: var(--mx-tree-node-height, 32px);
+    transition: min-height 0.2s ease-out;
+}
+
+/* Navigation breadcrumb trail */
+.mx-tree__navigation-breadcrumb {
+    position: sticky;
+    top: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--mx-tree-border-color, #e5e7eb);
+    padding: 8px 16px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--mx-tree-text-secondary, #6b7280);
+}
+
+.mx-tree__navigation-breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mx-tree__navigation-breadcrumb-separator {
+    color: var(--mx-tree-text-tertiary, #9ca3af);
+}
+
+/* Scroll position indicator (debug mode) */
+.mx-tree--debug .mx-tree__scroll-position {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: monospace;
+    z-index: 1000;
+}
+
+/* Focus ring for keyboard navigation */
+.mx-tree__node:focus-visible {
+    outline: 2px solid var(--mx-tree-focus-color, #3b82f6);
+    outline-offset: -2px;
+}
+
+/* Smooth transitions for height changes */
+.mx-tree__node {
+    transition: height 0.2s ease-out, transform 0.2s ease-out;
+}
+
+/* Prevent layout shift during loading */
+.mx-tree__content {
+    contain: layout style;
+}
+
+/* Virtual scroll placeholder heights */
+.mx-tree__virtual-placeholder {
+    pointer-events: none;
+    opacity: 0;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .mx-tree__navigation-loading {
+        background: rgba(31, 41, 55, 0.95);
+        color: white;
+    }
+    
+    .mx-tree__navigation-breadcrumb {
+        background: rgba(31, 41, 55, 0.9);
+        border-bottom-color: var(--mx-tree-border-color-dark, #374151);
+    }
+    
+    .mx-tree__node--highlighted {
+        animation-name: mx-tree-node-highlight-dark;
+    }
+    
+    @keyframes mx-tree-node-highlight-dark {
+        0% {
+            background-color: transparent;
+            box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.6);
+        }
+        10% {
+            background-color: rgba(96, 165, 250, 0.2);
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.4);
+            transform: scale(1.02);
+        }
+        30% {
+            background-color: rgba(96, 165, 250, 0.1);
+            box-shadow: 0 0 0 8px rgba(96, 165, 250, 0.2);
+            transform: scale(1.01);
+        }
+        100% {
+            background-color: transparent;
+            box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
+            transform: scale(1);
+        }
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .mx-tree__node--highlighted,
+    .mx-tree__node {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    .mx-tree__scroll-container {
+        scroll-behavior: auto !important;
+    }
+    
+    .mx-tree__node--highlighted {
+        background-color: rgba(59, 130, 246, 0.1) !important;
+    }
+}
